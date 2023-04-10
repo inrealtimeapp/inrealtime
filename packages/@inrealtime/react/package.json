@@ -1,7 +1,7 @@
 {
   "name": "@inrealtime/react",
   "author": "slate.se",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "Apache-2.0",
   "main": "dist/index",
   "scripts": {
@@ -35,11 +35,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/studio-se/inrealtime.git",
+    "url": "git+https://github.com/slate-se/inrealtime.git",
     "directory": "packages/@inrealtime/react"
   },
   "bugs": {
-    "url": "https://github.com/studio-se/inrealtime/issues"
+    "url": "https://github.com/slate-se/inrealtime/issues"
   },
   "homepage": "https://inrealtime.app",
   "description": "Realtime is a powerful and easy-to-use package for building real-time collaborative applications.",
