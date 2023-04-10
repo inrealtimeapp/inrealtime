@@ -40,16 +40,14 @@ Realtime is a powerful Javascript based real-time collaboration tool that lets d
 
 > What kind of real-time collaboration? Think about Figma, Notion, Google Docs and so on.
 
-If your data can be structured as JSON then you can use Realtime, simple as that. At this point we have released our [Realtime React developer package](https://www.npmjs.com/package/@inrealtime/react) on NPM for developers to use and we are working hard on releasing more packages for other frameworks in the future. To get started you will need to [create an account](https://inrealtime.app/) in our Web App to get the required keys in order to connect to the Realtime services. Then you can use this documentation to guide you on how you can take your software solution to the next level.
+## Getting started
+To use `Realtime`, you'll need to create a `Realtime` project on the [Realtime web app](https://inrealtime.app/). Once you've created a project, you'll be able to start integrating `Realtime` into your applications.
 
 ## Documentation
 The official documentation can be found at [Realtime Documentation](https://docs.inrealtime.app/)
 
 ## Packages
 - [@inrealtime/react](https://www.npmjs.com/package/@inrealtime/react)
-
-## Getting started
-To use `Realtime`, you'll need to create a `Realtime` project on the [Realtime web app](https://inrealtime.app/). Once you've created a project, you'll be able to start integrating `Realtime` into your applications.
 
 ## Examples
 See a list of examples apps in `apps/examples/`
