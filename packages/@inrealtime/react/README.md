@@ -6,28 +6,28 @@
 </p>
 
 <p align="center">
-  <a aria-label="License" href="">
+  <a aria-label="License" href="https://img.shields.io/github/license/slate-se/inrealtime">
     <img src="https://img.shields.io/github/license/slate-se/inrealtime">
   </a>
-  <a aria-label="Bundlephobia Min" href="">
+  <a aria-label="Bundlephobia Min" href="https://img.shields.io/bundlephobia/min/@inrealtime/react">
     <img src="https://img.shields.io/bundlephobia/min/@inrealtime/react">
   </a>
-  <a aria-label="Bundlephobia Minzip" href="">
+  <a aria-label="Bundlephobia Minzip" href="https://img.shields.io/bundlephobia/minzip/@inrealtime/react">
     <img src="https://img.shields.io/bundlephobia/minzip/@inrealtime/react">
   </a>
-  <a aria-label="NPM version" href="">
+  <a aria-label="NPM version" href="https://img.shields.io/npm/v/@inrealtime/react">
     <img src="https://img.shields.io/npm/v/@inrealtime/react">
   </a>
-  <a aria-label="NPM license" href="">
+  <a aria-label="NPM license" href="https://img.shields.io/npm/l/@inrealtime/react">
     <img src="https://img.shields.io/npm/l/@inrealtime/react">
   </a>
-  <a aria-label="GitHub issues" href="">
+  <a aria-label="GitHub issues" href="https://img.shields.io/github/issues/slate-se/inrealtime">
     <img src="https://img.shields.io/github/issues/slate-se/inrealtime">
   </a>
-  <a aria-label="GitHub activity" href="">
+  <a aria-label="GitHub activity" href="https://img.shields.io/github/commit-activity/m/slate-se/inrealtime">
     <img src="https://img.shields.io/github/commit-activity/m/slate-se/inrealtime">
   </a>
-  <a aria-label="GitHub release date" href="">
+  <a aria-label="GitHub release date" href="https://img.shields.io/github/release-date/slate-se/inrealtime">
     <img src="https://img.shields.io/github/release-date/slate-se/inrealtime">
   </a>
 </p>
