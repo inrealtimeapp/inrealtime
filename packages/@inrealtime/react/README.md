@@ -1,10 +1,7 @@
 
 <p align="center">
-  <a href="https://inrealtime.app#gh-light-mode-only">
-    <img src="https://raw.githubusercontent.com/slate-se/inrealtime/main/docs/assets/github-light.svg#gh-light-mode-only" alt="Realtime"   />
-  </a>
-  <a href="https://inrealtime.app#gh-dark-mode-only">
-    <img src="https://raw.githubusercontent.com/slate-se/inrealtime/main/docs/assets/github-dark.svg#gh-dark-mode-only" alt="Realtime"   />
+  <a href="https://inrealtime.app">
+    <img src="https://raw.githubusercontent.com/slate-se/inrealtime/main/docs/assets/github-dark.svg" alt="Realtime"   />
   </a>
 </p>
 
