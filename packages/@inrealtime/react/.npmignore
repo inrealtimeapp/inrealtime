@@ -1,0 +1,11 @@
+src/**
+babel.config.js
+tests/**
+.turbo
+tsconfig.json
+CHANGELOG.md
+
+# API keys and secrets
+.env
+**/.env
+**/*.env

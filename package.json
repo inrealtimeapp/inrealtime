@@ -1,0 +1,42 @@
+{
+  "name": "inrealtime",
+  "author": "slate.se",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/examples/*",
+    "apps/tests/*",
+    "packages/*",
+    "packages/@inrealtime/*"
+  ],
+  "scripts": {
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "build": "turbo run build",
+    "deploy": "turbo run deploy",
+    "dev": "turbo run dev",
+    "dev:todo": "turbo run dev --filter=inrealtime-examples-todo...",
+    "dev:stress": "turbo run dev --filter=inrealtime-tests-stress...",
+    "pre-publish-packages": "changeset",
+    "publish-packages": "turbo run build --filter=@inrealtime/react lint test && changeset version && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.26.0",
+    "prettier": "^2.7.1",
+    "tsup": "^6.4.0",
+    "turbo": "^1.8.3",
+    "typescript": "5.0.4",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "eslint": "8.38.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.5.2",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.31.10",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-simple-import-sort": "^8.0.0"
+  }
+}
