@@ -1,24 +1,13 @@
-
 <p align="center">
   <a href="https://inrealtime.app">
     <img src="https://raw.githubusercontent.com/slate-se/inrealtime/main/docs/assets/github-dark.svg" alt="Realtime"   />
   </a>
 </p>
 
-<p align="center">
-  <a aria-label="License" href="https://github.com/slate-se/inrealtime/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/slate-se/inrealtime">
-  </a>
-  <a aria-label="Bundlephobia Minzip" href="https://bundlephobia.com/package/@inrealtime/react">
-    <img src="https://img.shields.io/bundlephobia/minzip/@inrealtime/react">
-  </a>
-  <a aria-label="NPM version" href="https://www.npmjs.com/package/@inrealtime/react">
-    <img src="https://img.shields.io/npm/v/@inrealtime/react">
-  </a>
-</p>
+[![License](https://img.shields.io/github/license/slate-se/inrealtime?style=flat&labelColor=0F172A&color=EC4899&logo=github)](https://github.com/slate-se/inrealtime/blob/main/LICENSE) [![Version](https://img.shields.io/npm/v/@inrealtime/react?style=flat&labelColor=0F172A&color=EC4899&logo=npm)](https://www.npmjs.com/package/@inrealtime/react) [![Bundle size](https://img.shields.io/bundlephobia/minzip/@inrealtime/react?label=bundle%20size&style=flat&labelColor=0F172A&color=EC4899)](https://bundlephobia.com/package/@inrealtime/react)
 
 # Realtime
-Realtime is a powerful Javascript based real-time collaboration tool that lets developers implement multiplayer functionality for their applications in just a few minutes. Built with TypeScript, it provides a simple and elegant API for reading and modifying data.
+Realtime is a powerful JavaScript based real-time collaboration tool that lets developers implement multiplayer functionality for their applications in just a few minutes. Built with TypeScript, it provides a simple and elegant API for reading and modifying data.
 
 > What kind of real-time collaboration? Think about Figma, Notion, Google Docs and so on.
 
