@@ -6,13 +6,13 @@
 </p>
 
 <p align="center">
-  <a aria-label="License" href="https://img.shields.io/github/license/slate-se/inrealtime">
+  <a aria-label="License" href="https://github.com/slate-se/inrealtime/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/slate-se/inrealtime">
   </a>
-  <a aria-label="Bundlephobia Minzip" href="https://img.shields.io/bundlephobia/minzip/@inrealtime/react">
+  <a aria-label="Bundlephobia Minzip" href="https://bundlephobia.com/package/@inrealtime/react">
     <img src="https://img.shields.io/bundlephobia/minzip/@inrealtime/react">
   </a>
-  <a aria-label="NPM version" href="https://img.shields.io/npm/v/@inrealtime/react">
+  <a aria-label="NPM version" href="https://www.npmjs.com/package/@inrealtime/react">
     <img src="https://img.shields.io/npm/v/@inrealtime/react">
   </a>
 </p>
