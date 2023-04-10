@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.2
+
+### Patch Changes
+
+- Fixes to Readme
+
 ## 0.1.1
 
 ### Patch Changes
