@@ -39,13 +39,7 @@ export const Item = ({ item }: ItemProps) => {
   }
 
   return (
-    <Reorder.Item
-      id={item.id}
-      value={item}
-      dragListener={false}
-      dragControls={controls}
-      onDragStart={() => console.log('HERHE')}
-    >
+    <Reorder.Item id={item.id} value={item} dragListener={false} dragControls={controls}>
       <div
         className={`w-full flex items-center gap-3 px-3 py-1.5 rounded bg-neutral-100 border border-neutral-300 transition-opacity select-none ${
           item.isCompleted && 'opacity-60'
@@ -57,7 +51,7 @@ export const Item = ({ item }: ItemProps) => {
         >
           <IconGripVertical
             size={16}
-            className='text-neutral-500 group-hover:text-neutral-700 transition-colors'
+            className='text-neutral-500 group-hover:text-neutral-700 transition-colors touch-none'
           />
         </div>
 
