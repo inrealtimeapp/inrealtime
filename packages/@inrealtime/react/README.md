@@ -9,7 +9,7 @@
 # Realtime
 Realtime is a powerful Javascript based real-time collaboration tool that lets developers implement multiplayer functionality for their applications in just a few minutes. Realtime provides a simple and elegant API for effortlessly reading and modifying data.
 
-> What kind of real-time collaboration? Think about Figma, Notion, Google Docs and so on.
+> What kind of real-time collaboration? Think about Figma, Notion, Google Docs and so on. See [here](https://docs.inrealtime.app/examples) for a list of things you can build with Realtime.
 
 ## Getting started
 To use `Realtime`, you'll need to create a `Realtime` project on the [Realtime web app](https://inrealtime.app/). Once you've created a project, you'll be able to start integrating `Realtime` into your applications.
