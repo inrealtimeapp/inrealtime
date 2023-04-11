@@ -4,8 +4,11 @@ import dayjs from 'dayjs'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useMemo } from 'react'
+import utc from 'dayjs/plugin/utc'
 
 import { RealtimeProvider } from '@/realtime.config'
+
+dayjs.extend(utc)
 
 export default function App({ Component, pageProps }: AppProps) {
   const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
