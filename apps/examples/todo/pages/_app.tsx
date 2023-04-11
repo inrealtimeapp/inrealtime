@@ -8,7 +8,7 @@ import { useMemo } from 'react'
 import { RealtimeProvider } from '@/realtime.config'
 
 export default function App({ Component, pageProps }: AppProps) {
-  const startOfHour = useMemo(() => dayjs().format('YYMMDDHH').toString(), [])
+  const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
   return (
     <>
       <Head>
