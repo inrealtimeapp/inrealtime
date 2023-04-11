@@ -18,7 +18,7 @@
 </p>
 
 # Realtime
-Realtime is a powerful Javascript based real-time collaboration tool that lets developers implement multiplayer functionality for their applications in just a few minutes. Built with TypeScript, it provides a simple and elegant API for reading and modifying data.
+Realtime is a powerful Javascript based real-time collaboration tool that lets developers implement multiplayer functionality for their applications in just a few minutes. Realtime provides a simple and elegant API for reading and modifying data.
 
 > What kind of real-time collaboration? Think about Figma, Notion, Google Docs and so on.
 
