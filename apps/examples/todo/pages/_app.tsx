@@ -1,10 +1,10 @@
 import '@/styles/globals.css'
 
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useMemo } from 'react'
-import utc from 'dayjs/plugin/utc'
 
 import { RealtimeProvider } from '@/realtime.config'
 
