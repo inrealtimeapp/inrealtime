@@ -55,7 +55,6 @@ export const Avatars = () => {
 
   const updateMyEmoji = useCallback(() => {
     const emoji = formatEmojio(emojis[Math.floor(Math.random() * emojis.length)])
-    console.log('MY EMOJI', emoji)
 
     patchMe({
       emoji,

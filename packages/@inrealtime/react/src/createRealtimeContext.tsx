@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { Patch, Subscribe, UseStore } from './channels/document/store/types'
 import {
@@ -169,17 +169,17 @@ export const createRealtimeContext = <
     return subscribe
   }
 
-  function useCollaborators(
-    selector: (root: PresenceClient<TRealtimePresenceData>[]) => any,
-    equalityFn: (a: any, b: any) => boolean,
-  ) {
+  const useCollaborators = (
+    selector?: (root: PresenceClient<TRealtimePresenceData>[]) => any,
+    equalityFn?: (a: any, b: any) => boolean,
+  ) => {
     const { useCollaborators } = useRealtimeContext()
 
     if (useCollaborators === null) {
       throw new Error('No RealtimeProvider provided')
     }
 
-    return useCollaborators(selector, equalityFn)
+    return selector ? useCollaborators(selector, equalityFn) : useCollaborators()
   }
 
   const useSubscribeCollaborators = (): SubscribeCollaborators<TRealtimePresenceData> => {
@@ -192,17 +192,17 @@ export const createRealtimeContext = <
     return subscribeCollaborators
   }
 
-  function useMe(
-    selector: (root: PresenceClient<TRealtimePresenceData>) => any,
-    equalityFn: (a: any, b: any) => boolean,
-  ) {
+  const useMe = (
+    selector?: (root: PresenceClient<TRealtimePresenceData>) => any,
+    equalityFn?: (a: any, b: any) => boolean,
+  ) => {
     const { useMe } = useRealtimeContext()
 
     if (useMe === null) {
       throw new Error('No RealtimeProvider provided')
     }
 
-    return useMe(selector, equalityFn)
+    return selector ? useMe(selector, equalityFn) : useMe()
   }
 
   const usePatchMe = (): PatchMe<TRealtimePresenceData> => {

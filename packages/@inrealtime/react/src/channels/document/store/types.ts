@@ -8,12 +8,11 @@ import { FragmentIdToPath, ImmerPath } from './utils/pathUtils'
 
 export type UseStore<TRealtimeState> = {
   (): TRealtimeState
-} & UseStoreSelector<TRealtimeState>
-
-export type UseStoreSelector<TRealtimeState> = <TRealtimeSubState>(
-  selector: (root: TRealtimeState) => TRealtimeSubState,
-  equalityFn?: (a: TRealtimeSubState, b: TRealtimeSubState) => boolean,
-) => TRealtimeSubState
+  <TRealtimeSubState>(
+    selector: (root: TRealtimeState) => TRealtimeSubState,
+    equalityFn?: (a: TRealtimeSubState, b: TRealtimeSubState) => boolean,
+  ): TRealtimeSubState
+}
 
 export type Patch<TRealtimeState> = (fn: DocumentPatch<TRealtimeState>) => void
 
