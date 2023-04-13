@@ -10,7 +10,7 @@ import {
   DocumentOperationsResponse,
   Fragment,
 } from '../../../core'
-import { DocumentPatch, Patch, RealtimeStore } from './types'
+import { DocumentPatch, Patch, RealtimeStore, UseStore } from './types'
 import { resolveConflictsInStore } from './utils/conflictOperationUtils'
 import {
   applyPatchOperationsToFragment,
@@ -20,6 +20,25 @@ import { FragmentIdToPath } from './utils/pathUtils'
 import { applyRemoteOperationsMessages } from './utils/remoteOperationUtils'
 
 enablePatches()
+
+type useStoreWithPatch<TRealtimeState> = {
+  document: TRealtimeState
+  fragment: Fragment
+  fragmentIdToPath: FragmentIdToPath
+  getRoot(): {
+    document: TRealtimeState
+    fragment: Fragment
+    fragmentIdToPath: FragmentIdToPath
+  }
+  setRoot({}: {
+    document: TRealtimeState | undefined
+    fragment: Fragment | undefined
+    fragmentIdToPath: FragmentIdToPath | undefined
+  }): void
+  patch: Patch<TRealtimeState>
+  applyRemoteOperations(messages: (DocumentOperationsResponse | DocumentOperationsRequest)[]): void
+  resolveConflicts(conflictFragmentIds: string[], truthStore: RealtimeStore<TRealtimeState>): void
+}
 
 export const useRealtimeStore = <TRealtimeState>({
   onPatchOperations,
@@ -32,32 +51,9 @@ export const useRealtimeStore = <TRealtimeState>({
   useEffect(() => {
     onPatchOperationsRef.current = onPatchOperations
   }, [onPatchOperations])
-
   const useStoreWithPatchRef = useRef(
-    create(
-      subscribeWithSelector<{
-        document: TRealtimeState
-        fragment: Fragment
-        fragmentIdToPath: FragmentIdToPath
-        getRoot(): {
-          document: TRealtimeState
-          fragment: Fragment
-          fragmentIdToPath: FragmentIdToPath
-        }
-        setRoot({}: {
-          document: TRealtimeState | undefined
-          fragment: Fragment | undefined
-          fragmentIdToPath: FragmentIdToPath | undefined
-        }): void
-        patch: Patch<TRealtimeState>
-        applyRemoteOperations(
-          messages: (DocumentOperationsResponse | DocumentOperationsRequest)[],
-        ): void
-        resolveConflicts(
-          conflictFragmentIds: string[],
-          truthStore: RealtimeStore<TRealtimeState>,
-        ): void
-      }>((set, get) => ({
+    create<useStoreWithPatch<TRealtimeState>>()(
+      subscribeWithSelector<useStoreWithPatch<TRealtimeState>>((set, get) => ({
         document: undefined as unknown as TRealtimeState,
         fragment: undefined as any,
         fragmentIdToPath: undefined as any,
@@ -106,7 +102,7 @@ export const useRealtimeStore = <TRealtimeState>({
           })
 
           if (onPatchOperationsRef.current) {
-            onPatchOperationsRef.current(requests)
+            onPatchOperationsRef.current!(requests)
           }
         },
         applyRemoteOperations: (
@@ -180,10 +176,10 @@ export const useRealtimeStore = <TRealtimeState>({
   }, [])
 
   // Create a store hook which only has access to data, i.e. no setter functions
-  const useStore = useMemo(() => {
+  const useStore: UseStore<TRealtimeState> = useMemo(() => {
     return <TRealtimeSubState>(
       selector?: (state: TRealtimeState) => TRealtimeSubState,
-      equals?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
+      equalityFn?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
     ) =>
       useStoreWithPatchRef.current(
         (root) =>
@@ -192,7 +188,7 @@ export const useRealtimeStore = <TRealtimeState>({
             : selector
             ? selector(root.document)
             : (root.document as any),
-        equals,
+        equalityFn as any,
       )
   }, [])
 
@@ -209,7 +205,7 @@ export const useRealtimeStore = <TRealtimeState>({
         fireImmediately?: boolean
       },
     ) =>
-      useStoreWithPatchRef.current.subscribe(
+      (useStoreWithPatchRef.current.subscribe as any)(
         (root) =>
           root.fragment === undefined
             ? undefined

@@ -1,6 +1,5 @@
 import { useRealtime } from '@inrealtime/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-
 import { shallow } from 'zustand/shallow'
 
 type Root = {
@@ -17,7 +16,7 @@ export default function Home() {
   const randomEnabledRef = useRef(false)
   const [fakeState, setFakeState] = useState(0)
 
-  const { status, useStore, patch } = useRealtime<Root, any>({
+  const { status, useStore, patch, useMe, useCollaborators } = useRealtime<Root, any>({
     documentId,
     publicAuthKey: process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY,
     _package: {
@@ -123,11 +122,14 @@ export default function Home() {
 
   const nodes = useStore((root) => {
     return root?.nodes?.map((n) => ({
-      n: n?.n,
-      x: n?.position?.x,
-      y: n?.position?.y,
+      n: n.n,
+      x: n.position.x,
+      y: n.position.y,
     }))
   }, shallow)
+
+  const me = useMe()
+  const collaborators = useCollaborators()
 
   //const nodes = useStore((root: ProjectResponse) => root?.nodes)
 
@@ -144,6 +146,8 @@ export default function Home() {
       <div>Status: {status}</div>
       <div>Document id: {documentId}</div>
       <button onClick={randomDocumentId}>Set random documentId</button>
+      <div>Me: {me && JSON.stringify(me)}</div>
+      <div>Collaborators: {collaborators && JSON.stringify(collaborators)}</div>
       <div>
         <button
           onClick={() => {

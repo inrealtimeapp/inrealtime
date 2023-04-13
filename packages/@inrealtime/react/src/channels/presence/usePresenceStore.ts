@@ -1,61 +1,67 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
 import { PresenceClient } from '../../core'
-import { PresencePatch, PresenceStore } from './types'
+import { PresencePatch, PresenceStore, UseMe } from './types'
+
+type useStoreWithPatchType<TRealtimePresenceData> = {
+  initial: boolean
+  data: PresenceClient<TRealtimePresenceData>
+  patch(fn: PresencePatch<TRealtimePresenceData>): void
+  reset(): void
+}
 
 export const usePresenceStore = <TRealtimePresenceData>(): PresenceStore<TRealtimePresenceData> => {
-  const useStoreWithPatch = useMemo(
-    () =>
-      create(
-        subscribeWithSelector<{
-          initial: boolean
-          data: PresenceClient<TRealtimePresenceData>
-          patch(fn: PresencePatch<TRealtimePresenceData>): void
-          reset(): void
-        }>((set, get) => ({
-          initial: true,
-          data: {
-            data: {},
-          } as PresenceClient<TRealtimePresenceData>,
-          patch: (fn: PresencePatch<TRealtimePresenceData>) => {
-            set({
-              initial: false,
-              data: fn({ presence: get().data }),
-            })
-          },
-          reset: () => {
-            if (get().initial) {
-              return
-            }
-            set({
-              initial: true,
-              data: { data: {} } as PresenceClient<TRealtimePresenceData>,
-            })
-          },
-        })),
-      ),
-    [],
+  const useStoreWithPatchRef = useRef(
+    create<useStoreWithPatchType<TRealtimePresenceData>>()(
+      subscribeWithSelector((set, get) => ({
+        initial: true,
+        data: {
+          data: {},
+        } as PresenceClient<TRealtimePresenceData>,
+        patch: (fn: PresencePatch<TRealtimePresenceData>) => {
+          set({
+            initial: false,
+            data: fn({ presence: get().data }),
+          })
+        },
+        reset: () => {
+          if (get().initial) {
+            return
+          }
+          set({
+            initial: true,
+            data: { data: {} } as PresenceClient<TRealtimePresenceData>,
+          })
+        },
+      })),
+    ),
   )
+
   // Get patch function
-  const patch = useStoreWithPatch((root) => root.patch)
+  const patch = useMemo(() => {
+    return (fn: PresencePatch<TRealtimePresenceData>) =>
+      useStoreWithPatchRef.current.getState().patch(fn)
+  }, [])
 
   // Get reset function
-  const reset = useStoreWithPatch((root) => root.reset)
+  const reset = useMemo(() => {
+    return () => useStoreWithPatchRef.current.getState().reset()
+  }, [])
 
   // Create a store hook which only has access to data, i.e. no setter functions
-  const useStore = useMemo(() => {
+  const useStore: UseMe<TRealtimePresenceData> = useMemo(() => {
     return <TRealtimeSubState>(
       selector?: (state: PresenceClient<TRealtimePresenceData>) => TRealtimeSubState,
-      equals?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
+      equalityFn?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
     ) =>
-      useStoreWithPatch(
+      useStoreWithPatchRef.current(
         (root) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
-        equals,
+        equalityFn as any,
       )
-  }, [useStoreWithPatch])
+  }, [])
 
   // Create a subscribe function which can subscribe with selector
   const subscribe = useMemo(() => {
@@ -70,13 +76,13 @@ export const usePresenceStore = <TRealtimePresenceData>(): PresenceStore<TRealti
         fireImmediately?: boolean
       },
     ) =>
-      useStoreWithPatch.subscribe(
+      (useStoreWithPatchRef.current.subscribe as any)(
         (root) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
         listener,
         options,
       )
-  }, [useStoreWithPatch])
+  }, [])
 
   return {
     useStore,

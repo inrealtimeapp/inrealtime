@@ -6,7 +6,7 @@
   "main": "dist/index",
   "scripts": {
     "build": "tsup src/index.ts --format cjs --dts",
-    "dev": "tsc --watch --declaration",
+    "dev": "yarn build --watch",
     "test": "jest"
   },
   "jest": {
@@ -31,7 +31,7 @@
   "dependencies": {
     "immer": "^9.0.19",
     "simple-zustand-devtools": "^1.1.0",
-    "zustand": "^4.3.1"
+    "zustand": "^4.3.7"
   },
   "repository": {
     "type": "git",

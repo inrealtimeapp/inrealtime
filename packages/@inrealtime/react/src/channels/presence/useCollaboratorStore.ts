@@ -1,60 +1,66 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
 import { PresenceClient } from '../../core'
-import { CollaboratorPatch, CollaboratorStore } from './types'
+import { CollaboratorPatch, CollaboratorStore, UseCollaborators } from './types'
+
+type useStoreWithPatchType<TRealtimePresenceData> = {
+  initial: boolean
+  data: PresenceClient<TRealtimePresenceData>[]
+  patch(fn: CollaboratorPatch<TRealtimePresenceData>): void
+  reset(): void
+}
 
 export const useCollaboratorStore = <
   TRealtimePresenceData,
 >(): CollaboratorStore<TRealtimePresenceData> => {
-  const useStoreWithPatch = useMemo(
-    () =>
-      create(
-        subscribeWithSelector<{
-          initial: boolean
-          data: PresenceClient<TRealtimePresenceData>[]
-          patch(fn: CollaboratorPatch<TRealtimePresenceData>): void
-          reset(): void
-        }>((set, get) => ({
-          initial: true,
-          data: [],
-          patch: (fn: CollaboratorPatch<TRealtimePresenceData>) => {
-            set({
-              data: [...fn({ presences: get().data })], // Create new list for selector
-            })
-          },
-          reset: () => {
-            if (get().initial) {
-              return
-            }
-            set({
-              initial: true,
-              data: [],
-            })
-          },
-        })),
-      ),
-    [],
+  const useStoreWithPatchRef = useRef(
+    create<useStoreWithPatchType<TRealtimePresenceData>>()(
+      subscribeWithSelector((set, get) => ({
+        initial: true,
+        data: [],
+        patch: (fn: CollaboratorPatch<TRealtimePresenceData>) => {
+          set({
+            data: [...fn({ presences: get().data })], // Create new list for selector
+          })
+        },
+        reset: () => {
+          if (get().initial) {
+            return
+          }
+          set({
+            initial: true,
+            data: [],
+          })
+        },
+      })),
+    ),
   )
+
   // Get patch function
-  const patch = useStoreWithPatch((root) => root.patch)
+  const patch = useMemo(() => {
+    return (fn: CollaboratorPatch<TRealtimePresenceData>) =>
+      useStoreWithPatchRef.current.getState().patch(fn)
+  }, [])
 
   // Get reset function
-  const reset = useStoreWithPatch((root) => root.reset)
+  const reset = useMemo(() => {
+    return () => useStoreWithPatchRef.current.getState().reset()
+  }, [])
 
   // Create a store hook which only has access to data, i.e. no setter functions
-  const useStore = useMemo(() => {
+  const useStore: UseCollaborators<TRealtimePresenceData> = useMemo(() => {
     return <TRealtimeSubState>(
       selector?: (collaborators: PresenceClient<TRealtimePresenceData>[]) => TRealtimeSubState,
-      equals?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
+      equalityFn?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
     ) =>
-      useStoreWithPatch(
+      useStoreWithPatchRef.current(
         (root) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
-        equals,
+        equalityFn as any,
       )
-  }, [useStoreWithPatch])
+  }, [])
 
   // Create a subscribe function which can subscribe with selector
   const subscribe = useMemo(() => {
@@ -69,13 +75,13 @@ export const useCollaboratorStore = <
         fireImmediately?: boolean
       },
     ) =>
-      useStoreWithPatch.subscribe(
+      (useStoreWithPatchRef.current.subscribe as any)(
         (root) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
         listener,
         options,
       )
-  }, [useStoreWithPatch])
+  }, [])
 
   return {
     useStore,

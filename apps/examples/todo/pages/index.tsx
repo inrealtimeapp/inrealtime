@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google'
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react'
 
 import { Avatars, Item } from '@/components'
-import { TodoItem, usePatch, useStatus, useStore, useSubscribe } from '@/realtime.config'
+import { usePatch, useStatus, useStore } from '@/realtime.config'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,7 +15,7 @@ export default function Home() {
 
   const [workingTitle, setWorkingTitle] = useState('')
 
-  const items: TodoItem[] = useStore((root) => root?.todos)
+  const items = useStore((root) => root?.todos)
 
   const onChangeTitle = (e: ChangeEvent<HTMLInputElement>) => {
     setWorkingTitle(e?.target?.value ?? '')

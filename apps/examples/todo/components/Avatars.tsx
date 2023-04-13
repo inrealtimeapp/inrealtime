@@ -99,10 +99,12 @@ export const Avatars = () => {
           ))}
         </AnimatePresence>
       </div>
-      <div className='text-neutral-500 text-sm'>
-        <span className='font-semibold'>{connected}</span> {connected === 1 ? 'user' : 'users'}{' '}
-        connected
-      </div>
+      {status === RealtimeStatus.Ready && (
+        <div className='text-neutral-500 text-sm'>
+          <span className='font-semibold'>{connected}</span> {connected === 1 ? 'user' : 'users'}{' '}
+          connected
+        </div>
+      )}
     </div>
   )
 }

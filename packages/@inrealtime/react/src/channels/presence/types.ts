@@ -8,15 +8,21 @@ export type PresencePatch<TRealtimePresenceData> = ({}: {
   presence: PresenceClient<TRealtimePresenceData>
 }) => PresenceClient<TRealtimePresenceData>
 
-export type UseCollaborators<TRealtimePresenceData> = <TRealtimeSubState>(
-  selector?: (collaborators: PresenceClient<TRealtimePresenceData>[]) => TRealtimeSubState,
-  equals?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
-) => TRealtimeSubState
+export type UseCollaborators<TRealtimePresenceData> = {
+  (): PresenceClient<TRealtimePresenceData>[]
+  <TRealtimeSubState = PresenceClient<TRealtimePresenceData>[]>(
+    selector: (collaborators: PresenceClient<TRealtimePresenceData>[]) => TRealtimeSubState,
+    equalityFn?: (a: TRealtimeSubState, b: TRealtimeSubState) => boolean,
+  ): TRealtimeSubState
+}
 
-export type UseMe<TRealtimePresenceData> = <TRealtimeSubState>(
-  selector?: (me: PresenceClient<TRealtimePresenceData>) => TRealtimeSubState,
-  equals?: ((a: TRealtimeSubState, b: TRealtimeSubState) => boolean) | undefined,
-) => TRealtimeSubState
+export type UseMe<TRealtimePresenceData> = {
+  (): PresenceClient<TRealtimePresenceData>
+  <TRealtimeSubState = PresenceClient<TRealtimePresenceData>>(
+    selector: (me: PresenceClient<TRealtimePresenceData>) => TRealtimeSubState,
+    equalityFn?: (a: TRealtimeSubState, b: TRealtimeSubState) => boolean,
+  ): TRealtimeSubState
+}
 
 export type PatchMe<TRealtimePresenceData> = (
   data: Partial<TRealtimePresenceData>,
