@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid'
 import { Inter } from 'next/font/google'
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react'
 
-import { Item } from '@/components'
+import { Avatars, Item } from '@/components'
 import { TodoItem, usePatch, useStatus, useStore, useSubscribe } from '@/realtime.config'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -81,6 +81,10 @@ export default function Home() {
         The todo items below are written by users all over the world since this document is
         connected to the Realtime services. We take no responsibility for what they might say.
       </p>
+
+      <div className=''>
+        <Avatars />
+      </div>
 
       <form onSubmit={onSubmit} className='flex items-center justify-between gap-3 mb-5'>
         <input

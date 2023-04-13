@@ -40,7 +40,7 @@ a {
   }
 
   .input {
-    @apply h-9 py-0 px-3 text-sm font-medium text-neutral-900 rounded border bg-neutral-100 border-neutral-300 dark:border-neutral-600 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:outline-none focus:ring-2 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-neutral-900 ring-neutral-300 dark:ring-neutral-600 disabled:opacity-60;
+    @apply h-9 py-0 px-3 text-sm font-medium text-neutral-900 rounded border bg-neutral-100 border-neutral-300 dark:border-neutral-600 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:outline-none focus:ring-2 ring-offset-2 ring-offset-neutral-50 ring-neutral-300 dark:ring-neutral-600 disabled:opacity-60;
   }
 
   .toggle {
@@ -48,7 +48,7 @@ a {
   }
 
   .checkbox {
-    @apply relative h-5 w-5 appearance-none rounded-md border border-neutral-500/60 outline-none transition-colors checked:border-pink-500 checked:bg-pink-500 after:transition-transform after:scale-0 checked:after:scale-100 after:absolute after:top-[1px] after:left-[5px] after:block after:h-3 after:w-2 after:rotate-45 after:border-r-[2px] after:border-b-[2px] after:border-neutral-50 after:content-[''] hover:cursor-pointer dark:checked:border-pink-500 dark:checked:bg-pink-500;
+    @apply relative h-5 w-5 appearance-none rounded-md border border-neutral-500/60 outline-none transition-colors checked:border-pink-500 checked:bg-pink-500 after:transition-transform after:scale-0 checked:after:scale-100 after:absolute after:top-[1px] after:left-[5px] after:block after:h-3 after:w-2 after:rotate-45 after:border-r-[2px] after:border-b-[2px] after:border-neutral-50 after:content-[''] hover:cursor-pointer;
   }
 
   .wrapper {

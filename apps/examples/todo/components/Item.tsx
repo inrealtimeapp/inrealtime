@@ -39,26 +39,25 @@ export const Item = ({ item }: ItemProps) => {
   }
 
   return (
-    <Reorder.Item value={item} dragListener={false} dragControls={controls}>
+    <Reorder.Item id={item.id} value={item} dragListener={false} dragControls={controls}>
       <div
         className={`w-full flex items-center gap-3 px-3 py-1.5 rounded bg-neutral-100 border border-neutral-300 transition-opacity select-none ${
           item.isCompleted && 'opacity-60'
         }`}
       >
         <div
-          role='button'
-          className='reorder-handle group cursor-grab -ml-2 -mr-1 py-2 px-1 rounded bg-neutral-200/0 hover:bg-neutral-200/100 transition-colors'
+          className='reorder-handle group cursor-grab -ml-2 -mr-1 py-2 px-1 rounded bg-neutral-200/0 hover:bg-neutral-200/100 transition-colors touch-none'
           onPointerDown={(e) => controls.start(e)}
         >
           <IconGripVertical
             size={16}
-            className='text-neutral-500 group-hover:text-neutral-700 transition-colors'
+            className='text-neutral-500 group-hover:text-neutral-700 transition-colors touch-none'
           />
         </div>
 
         <input
           id='isCompleted'
-          className='checkbox'
+          className='checkbox shrink-0'
           type='checkbox'
           checked={item.isCompleted}
           onChange={onClickCheck}

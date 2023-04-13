@@ -12,7 +12,7 @@ export type RealtimeDocument = {
 
 export type PresenceData = {
   id: string
-  name?: string
+  emoji?: string
   cursor?: { x?: number; y?: number }
 }
 
