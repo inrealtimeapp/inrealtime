@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.4
+
+### Patch Changes
+
+- Updating access level of package
+
 ## 0.1.3
 
 ### Patch Changes
