@@ -10,7 +10,8 @@
     "apps/examples/*",
     "apps/tests/*",
     "packages/*",
-    "packages/@inrealtime/*"
+    "packages/@inrealtime/*",
+    "packages/tests/@realtimetests/*"
   ],
   "scripts": {
     "test": "turbo run test",
@@ -21,7 +22,7 @@
     "dev:todo": "turbo run dev --filter=inrealtime-examples-todo...",
     "dev:stress": "turbo run dev --filter=inrealtime-tests-stress...",
     "pre-publish-packages": "changeset",
-    "publish-packages": "turbo run build --filter=@inrealtime/react lint test && changeset version && changeset publish"
+    "publish-packages": "turbo run build --filter=@inrealtime/react lint test && turbo run build --filter=@realtimetests/react && changeset version && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.0",

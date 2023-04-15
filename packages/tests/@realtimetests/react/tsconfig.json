@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "target": "es5",
+    "module": "esnext",
+    "lib": ["dom", "es5", "es2015.collection", "es2015.iterable"],
+    "outDir": "dist",
+    "jsx": "react",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.tslint": true
+  },
+  "include": ["src/**/*", "../../../@inrealtime/react/src/**/*"],
+  "exclude": ["node_modules", "dist/**/*"]
+}

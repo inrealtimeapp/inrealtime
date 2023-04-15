@@ -1,0 +1,29 @@
+{
+  "name": "@realtimetests/react",
+  "author": "slate.se",
+  "version": "0.0.3",
+  "license": "Apache-2.0",
+  "main": "dist/index",
+  "scripts": {
+    "build": "rm -r dist && cp -rf ../../../@inrealtime/react/dist ./"
+  },
+  "peerDependencies": {
+    "react": "*"
+  },
+  "dependencies": {
+    "immer": "^9.0.19",
+    "simple-zustand-devtools": "^1.1.0",
+    "zustand": "^4.3.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slate-se/inrealtime.git",
+    "directory": "packages/tests/@realtimetests/react"
+  },
+  "bugs": {
+    "url": "https://github.com/slate-se/inrealtime/issues"
+  },
+  "homepage": "https://inrealtime.app",
+  "description": "This is a development version of Realtime React package. It is very fragile and should not be used.",
+  "keywords": []
+}
