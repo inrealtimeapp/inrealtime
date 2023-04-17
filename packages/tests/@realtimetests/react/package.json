@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "immer": "^9.0.19",
-    "simple-zustand-devtools": "^1.1.0",
     "zustand": "^4.3.7"
   },
   "repository": {

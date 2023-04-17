@@ -1,3 +1,6 @@
+import { IAutosave } from './channels/document/store/autosave/autosave'
+import { IndexedAutosave } from './channels/document/store/autosave/indexeddb_autosave'
+
 const allowedEnvironments = ['local', 'development', 'production']
 
 const webSocketUrls = {
@@ -19,19 +22,17 @@ export type RealtimeConfig = {
   debug: {
     conflicts: boolean
   }
-  developerSettings: {
-    devtools: boolean
-  }
+  autosave: boolean
 }
 
 export const getRealtimeConfig = ({
   environment,
   debug,
-  developerSettings,
+  autosave,
 }: {
   environment?: 'local' | 'development' | 'production'
   debug?: { conflicts?: boolean }
-  developerSettings?: { devtools?: boolean }
+  autosave?: boolean
 }): RealtimeConfig => {
   if (!environment || !allowedEnvironments.includes(environment)) {
     environment = 'production'
@@ -46,8 +47,6 @@ export const getRealtimeConfig = ({
     debug: {
       conflicts: debug?.conflicts ?? false,
     },
-    developerSettings: {
-      devtools: developerSettings?.devtools ?? false,
-    },
+    autosave: !!autosave,
   }
 }

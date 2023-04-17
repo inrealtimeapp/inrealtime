@@ -151,7 +151,7 @@ export class ImmutableFragment implements IImmutableFragment {
     let immutablePath = ''
     if (!this._isPathImmutable(immutablePath)) {
       this._addImmutablePath(immutablePath)
-      fragment = { ...fragment }
+      fragment = { ...fragment } as any
 
       if ((fragment as FragmentMap | FragmentList).value) {
         ;(fragment as FragmentMap | FragmentList).value = {
@@ -178,7 +178,7 @@ export class ImmutableFragment implements IImmutableFragment {
       let nextSubFragment = listOrMap.value[index]
       if (!this._isPathImmutable(immutablePath)) {
         this._addImmutablePath(immutablePath)
-        nextSubFragment = { ...nextSubFragment }
+        nextSubFragment = { ...nextSubFragment } as any
         if ((nextSubFragment as FragmentMap | FragmentList).value) {
           ;(nextSubFragment as FragmentMap | FragmentList).value = {
             ...(nextSubFragment as FragmentMap | FragmentList).value,
@@ -219,7 +219,7 @@ export class ImmutableFragment implements IImmutableFragment {
         f.parentListIndex! <= itemImmutabilityToIndex
       ) {
         this._addImmutablePath(subImmutablePath)
-        f = { ...f }
+        f = { ...f } as any
         if ((f as FragmentList | FragmentMap).value) {
           ;(f as FragmentList | FragmentMap).value = { ...(f as FragmentList | FragmentMap).value }
         }

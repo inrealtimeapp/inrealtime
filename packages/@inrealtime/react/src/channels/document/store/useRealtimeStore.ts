@@ -1,6 +1,5 @@
 import { enablePatches, freeze, produceWithPatches } from 'immer'
 import { useEffect, useMemo, useRef } from 'react'
-import { mountStoreDevtool } from 'simple-zustand-devtools'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
@@ -42,10 +41,8 @@ type useStoreWithPatch<TRealtimeState> = {
 
 export const useRealtimeStore = <TRealtimeState>({
   onPatchOperations,
-  devtools,
 }: {
   onPatchOperations?: (requests: DocumentOperationRequest[]) => void
-  devtools?: { name: string }
 }): RealtimeStore<TRealtimeState> => {
   const onPatchOperationsRef = useRef<(requests: DocumentOperationRequest[]) => void | undefined>()
   useEffect(() => {
@@ -153,13 +150,6 @@ export const useRealtimeStore = <TRealtimeState>({
       })),
     ),
   )
-
-  useEffect(() => {
-    if (!devtools) {
-      return
-    }
-    mountStoreDevtool(devtools.name, useStoreWithPatchRef.current)
-  }, [])
 
   // Get getRoot function
   const getRoot = useMemo(() => {

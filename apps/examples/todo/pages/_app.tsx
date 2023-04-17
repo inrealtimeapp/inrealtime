@@ -21,6 +21,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <RealtimeProvider
         documentId={startOfHour}
         publicAuthKey={process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY}
+        autosave={true}
         throttle={50}
       >
         <Component {...pageProps} />

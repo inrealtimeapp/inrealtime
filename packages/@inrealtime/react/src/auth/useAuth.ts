@@ -19,7 +19,13 @@ type AuthOptions = {
   config: RealtimeConfig
 }
 
-type AuthState = { socketUrl?: string; token?: string; status: AuthenticationStatus }
+type AuthState = {
+  status: AuthenticationStatus
+  socketUrl?: string
+  token?: string
+  projectId?: string
+  documentId?: string
+}
 
 enum AuthenticationStatus {
   Authenticating = 'Authenticating',
@@ -34,10 +40,10 @@ const authenticateFn = async ({
   realtimeAuth: RealtimeAuth
   documentId: string
 }) => {
-  const { socketUrl, token } = await realtimeAuth.auth({ documentId })
+  const { socketUrl, token, projectId } = await realtimeAuth.auth({ documentId })
   const tokenPayload = JSON.parse(atob(token.split('.')[1]))
   const tokenExpiryTime: number = tokenPayload.exp
-  return { socketUrl, token, tokenExpiryTime }
+  return { socketUrl, token, tokenExpiryTime, projectId }
 }
 
 export const useAuth = ({
@@ -47,9 +53,10 @@ export const useAuth = ({
   publicAuthKey,
 }: AuthOptions): AuthState => {
   const [authData, setAuthData] = useState<{
-    token?: string
     socketUrl?: string
+    token?: string
     tokenExpiryTime?: number
+    projectId?: string
     documentId?: string
   }>({})
   const [status, setStatus] = useState<AuthenticationStatus>(AuthenticationStatus.Authenticating)
@@ -133,8 +140,8 @@ export const useAuth = ({
     }
 
     authenticate()
-      .then(({ socketUrl, token, tokenExpiryTime }) => {
-        setAuthData({ socketUrl, token, tokenExpiryTime, documentId })
+      .then(({ socketUrl, token, tokenExpiryTime, projectId }) => {
+        setAuthData({ socketUrl, token, tokenExpiryTime, projectId, documentId })
         setStatus(AuthenticationStatus.Authenticated)
         console.log('Auth status -> Authenticated')
       })
@@ -155,5 +162,11 @@ export const useAuth = ({
       })
   }, [status, authenticate, documentId])
 
-  return { status, ...authData }
+  return {
+    status,
+    socketUrl: authData.socketUrl,
+    token: authData.token,
+    projectId: authData.projectId,
+    documentId: authData.documentId,
+  }
 }

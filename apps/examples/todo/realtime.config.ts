@@ -20,6 +20,7 @@ export const {
   RealtimeProvider,
   useRealtimeContext,
   useStatus,
+  useConnectionStatus,
   useStore,
   usePatch,
   useSubscribe,

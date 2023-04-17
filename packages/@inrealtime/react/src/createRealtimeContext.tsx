@@ -10,11 +10,12 @@ import {
   UseCollaborators,
   UseMe,
 } from './channels/presence/types'
-import { GetAuthToken, PresenceClient } from './core'
-import { RealtimeStatus, useRealtime } from './useRealtime'
+import { PresenceClient } from './core'
+import { ConnectionStatus, RealtimeStatus, useRealtime, UseRealtimeOptions } from './useRealtime'
 
 type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
   status: RealtimeStatus
+  connectionStatus: ConnectionStatus
   useStore: UseStore<TRealtimeState>
   patch: Patch<TRealtimeState>
   subscribe: Subscribe<TRealtimeState>
@@ -29,25 +30,13 @@ type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
 
 type RealtimeProviderProps = {
   children: React.ReactNode
-  documentId?: string
-  throttle?: number
-  getAuthToken?: GetAuthToken
-  publicAuthKey?: string
-  developerSettings?: {
-    devtools?: boolean
-  }
-  _package?: {
-    environment?: 'local' | 'development' | 'production'
-    debug?: {
-      conflicts?: boolean
-    }
-  }
-}
+} & UseRealtimeOptions
 
 type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
   RealtimeProvider(props: RealtimeProviderProps): JSX.Element
   useRealtimeContext(): RealtimeContextProps<TRealtimeState, TRealtimePresenceData>
   useStatus(): RealtimeStatus
+  useConnectionStatus(): ConnectionStatus
   useStore: UseStore<TRealtimeState>
   usePatch(): Patch<TRealtimeState>
   useSubscribe(): Subscribe<TRealtimeState>
@@ -71,14 +60,15 @@ export const createRealtimeContext = <
   const RealtimeProvider = ({
     children,
     documentId,
-    throttle,
     getAuthToken,
     publicAuthKey,
-    developerSettings,
+    autosave,
+    throttle,
     _package,
   }: RealtimeProviderProps) => {
     const {
       status,
+      connectionStatus,
       useStore,
       patch,
       subscribe,
@@ -93,8 +83,8 @@ export const createRealtimeContext = <
       documentId,
       getAuthToken,
       publicAuthKey,
+      autosave,
       throttle,
-      developerSettings,
       _package,
     })
 
@@ -102,6 +92,7 @@ export const createRealtimeContext = <
       <RealtimeContext.Provider
         value={{
           status,
+          connectionStatus,
           useStore,
           patch,
           subscribe,
@@ -134,6 +125,16 @@ export const createRealtimeContext = <
     }
 
     return status
+  }
+
+  const useConnectionStatus = () => {
+    const { connectionStatus } = useRealtimeContext()
+
+    if (connectionStatus === null) {
+      throw new Error('No RealtimeProvider provided')
+    }
+
+    return connectionStatus
   }
 
   const useStore = (
@@ -249,12 +250,13 @@ export const createRealtimeContext = <
     RealtimeProvider,
     useRealtimeContext,
     useStatus,
+    useConnectionStatus,
     useStore,
     usePatch,
     useSubscribe,
-    useCollaborators: useCollaborators as UseCollaborators<TRealtimePresenceData>,
+    useCollaborators,
     useSubscribeCollaborators,
-    useMe: useMe as UseMe<TRealtimePresenceData>,
+    useMe,
     usePatchMe,
     useSubscribeMe,
     useBroadcast,

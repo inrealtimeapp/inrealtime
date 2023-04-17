@@ -22,6 +22,7 @@ export default function Home() {
     _package: {
       environment: process.env.NEXT_PUBLIC_REALTIME_DEVELOPMENT_ENVIRONMENT as any,
     },
+    throttle: 16,
   })
 
   const doRandom = useCallback(() => {
