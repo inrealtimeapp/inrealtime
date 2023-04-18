@@ -1,6 +1,3 @@
-import { IAutosave } from './channels/document/store/autosave/autosave'
-import { IndexedAutosave } from './channels/document/store/autosave/indexeddb_autosave'
-
 const allowedEnvironments = ['local', 'development', 'production']
 
 const webSocketUrls = {

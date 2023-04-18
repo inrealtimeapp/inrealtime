@@ -1,4 +1,4 @@
-import { DocumentOperationsRequest, Fragment } from '../../../../core'
+import { DocumentOperationsRequest, Fragment } from '../../../core'
 import { IAutosave } from './autosave'
 
 const dbNamePrefix = 'realtime_database'
@@ -7,17 +7,27 @@ const objectStoreNameOperations = 'operations'
 const dbVersion = 1
 
 export class IndexedAutosave implements IAutosave {
+  private readonly _documentId: string
   private _database: IDBDatabase | undefined
-  private _initPromise: Promise<void>
+  private _initPromise: Promise<boolean>
 
-  init(documentId: string): Promise<void> {
-    if (!window.indexedDB) {
-      throw new Error('IndexedDB not supported in autosave')
+  constructor({ documentId }: { documentId: string }) {
+    this._documentId = documentId
+  }
+
+  connect(): Promise<boolean> {
+    if (!window || !window.indexedDB) {
+      console.warn(
+        "We're sorry to inform you that your current runtime environment does not support the Autosave feature, which is built upon IndexedDB.",
+        'As a result, we have disabled the Autosave feature for your current runtime.',
+        "However, we're more than happy to help and consider adding support for it if you could kindly send us a message with your use case and runtime environment at support@inrealtime.app.",
+      )
+      return Promise.resolve(false)
     }
 
     if (!this._initPromise) {
       this._initPromise = new Promise((resolve, reject) => {
-        const request = window.indexedDB.open(`${dbNamePrefix}_${documentId}`, dbVersion)
+        const request = window.indexedDB.open(`${dbNamePrefix}_${this._documentId}`, dbVersion)
 
         request.onerror = (event: Event) => {
           console.error('Database error:', (event.target as IDBOpenDBRequest).error)
@@ -27,26 +37,22 @@ export class IndexedAutosave implements IAutosave {
         request.onsuccess = (event: Event) => {
           const db = (event.target as IDBOpenDBRequest).result
           this._database = db
-          console.log('Database opened:', db.name, db.version)
 
-          if (!db.objectStoreNames.contains(objectStoreNameFragments)) {
-            db.createObjectStore(objectStoreNameFragments, { keyPath: 'id' })
-            console.log('Object store created:', objectStoreNameFragments)
-          }
-
-          resolve()
+          resolve(true)
         }
 
         request.onupgradeneeded = (event: Event) => {
           const db = (event.target as IDBOpenDBRequest).result
-          console.log('Database upgraded:', db.name, db.version)
 
           if (!db.objectStoreNames.contains(objectStoreNameFragments)) {
             db.createObjectStore(objectStoreNameFragments, { keyPath: 'id' })
           }
 
           if (!db.objectStoreNames.contains(objectStoreNameOperations)) {
-            db.createObjectStore(objectStoreNameOperations, { keyPath: 'messageId' })
+            db.createObjectStore(objectStoreNameOperations, {
+              keyPath: 'id',
+              autoIncrement: true,
+            })
           }
         }
       })
@@ -55,18 +61,28 @@ export class IndexedAutosave implements IAutosave {
     return this._initPromise
   }
 
-  async getFragment({ documentId }: { documentId: string }): Promise<Fragment | undefined> {
+  disconnect(): Promise<void> {
+    if (!this._database) {
+      return
+    }
+
+    this._database.close()
+    console.log('Database closed:', this._database.name, this._database.version)
+
+    this._database = undefined
+    ;(this._initPromise as any) = undefined
+  }
+
+  getFragment(): Promise<Fragment | undefined> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
 
-    console.log('Getting fragment')
-
     const transaction = this._database.transaction(objectStoreNameFragments, 'readonly')
     const objectStore = transaction.objectStore(objectStoreNameFragments)
 
-    const request = objectStore.get(documentId)
-    const result = new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
+      const request = objectStore.get(this._documentId)
       request.onsuccess = () => {
         resolve(request.result?.data)
       }
@@ -74,28 +90,20 @@ export class IndexedAutosave implements IAutosave {
         reject(request.error)
       }
     })
-    return result
+    return promise
   }
 
-  async saveFragment({
-    documentId,
-    fragment,
-  }: {
-    documentId: string
-    fragment: Fragment
-  }): Promise<void> {
+  saveFragment(fragment: Fragment): Promise<void> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
-
-    console.log('Saving fragment')
 
     const transaction = this._database.transaction(objectStoreNameFragments, 'readwrite')
     const objectStore = transaction.objectStore(objectStoreNameFragments)
 
     const promise = new Promise((resolve, reject) => {
       const putRequest = objectStore.put({
-        id: documentId,
+        id: this._documentId,
         data: fragment,
       })
       putRequest.onsuccess = () => {
@@ -105,16 +113,10 @@ export class IndexedAutosave implements IAutosave {
         reject(putRequest.error)
       }
     })
-    await promise
+    return promise
   }
 
-  async deleteFragment({
-    projectId,
-    documentId,
-  }: {
-    projectId: string
-    documentId: string
-  }): Promise<void> {
+  deleteFragment(): Promise<void> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
@@ -123,7 +125,7 @@ export class IndexedAutosave implements IAutosave {
     const objectStore = transaction.objectStore(objectStoreNameFragments)
 
     const promise = new Promise((resolve, reject) => {
-      const deleteRequest = objectStore.delete(documentId)
+      const deleteRequest = objectStore.delete(this._documentId)
       deleteRequest.onsuccess = () => {
         resolve()
       }
@@ -132,14 +134,10 @@ export class IndexedAutosave implements IAutosave {
       }
     })
 
-    await promise
+    return promise
   }
 
-  async getOperations({
-    documentId,
-  }: {
-    documentId: string
-  }): Promise<DocumentOperationsRequest[] | undefined> {
+  async getOperations(): Promise<(DocumentOperationsRequest & { id: number })[] | undefined> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
@@ -158,18 +156,12 @@ export class IndexedAutosave implements IAutosave {
     })
   }
 
-  async saveOperation({
-    documentId,
-    message,
-  }: {
-    documentId: string
-    message: DocumentOperationsRequest
-  }): Promise<void> {
+  saveOperation(
+    message: DocumentOperationsRequest,
+  ): Promise<DocumentOperationsRequest & { id: number }> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
-
-    console.log('Saving operation')
 
     const transaction = this._database.transaction(objectStoreNameOperations, 'readwrite')
     const objectStore = transaction.objectStore(objectStoreNameOperations)
@@ -177,17 +169,18 @@ export class IndexedAutosave implements IAutosave {
     const promise = new Promise((resolve, reject) => {
       const putRequest = objectStore.put(message)
       putRequest.onsuccess = () => {
-        resolve()
+        ;(message as any).id = putRequest.result
+        resolve(message)
       }
       putRequest.onerror = () => {
         reject(putRequest.error)
       }
     })
 
-    await promise
+    return promise
   }
 
-  async deleteOperations({ documentId }: { documentId: string }): Promise<void> {
+  deleteOperations(): Promise<void> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
@@ -205,16 +198,10 @@ export class IndexedAutosave implements IAutosave {
       }
     })
 
-    await promise
+    return promise
   }
 
-  async removeOperation({
-    documentId,
-    messageId,
-  }: {
-    documentId: string
-    messageId: string
-  }): Promise<void> {
+  removeOperation(id: number): Promise<void> {
     if (!this._database) {
       throw new Error('Database not initialized')
     }
@@ -223,7 +210,7 @@ export class IndexedAutosave implements IAutosave {
     const objectStore = transaction.objectStore(objectStoreNameOperations)
 
     const promise = new Promise((resolve, reject) => {
-      const deleteRequest = objectStore.delete(messageId)
+      const deleteRequest = objectStore.delete(id)
       deleteRequest.onsuccess = () => {
         resolve()
       }
@@ -232,6 +219,6 @@ export class IndexedAutosave implements IAutosave {
       }
     })
 
-    await promise
+    return promise
   }
 }

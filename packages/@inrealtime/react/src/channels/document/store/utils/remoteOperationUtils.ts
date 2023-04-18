@@ -179,7 +179,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
   })
 
   return {
-    newDocument,
+    newDocument: newDocument as TRealtimeState,
     newFragment: immutableFragment.getFragment(),
     newFragmentIdToPath: immutableFragment.getFragmentIdToPath(),
   }

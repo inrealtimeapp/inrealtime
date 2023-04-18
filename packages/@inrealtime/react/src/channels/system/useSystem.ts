@@ -4,8 +4,8 @@ import { uniqueId } from '../../core'
 import { RealtimeWebSocketStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
 
-const PING_INTERVAL = 10000
-const PONG_TIMEOUT = 15000
+const PING_INTERVAL = 7500
+const PONG_TIMEOUT = 65000
 
 export const useSystemChannel = ({
   webSocketStatus,
@@ -17,45 +17,50 @@ export const useSystemChannel = ({
   const pingIntervalRef = useRef<number | null>(null)
   const pongTimeoutRef = useRef<number | null>(null)
 
-  const pong = () => {
-    if (pongTimeoutRef.current) {
-      clearTimeout(pongTimeoutRef.current)
-    }
-  }
-
   const { sendMessage } = useChannel({
     channel: 'system',
     onMessage: useCallback((message) => {
       if (message.type === 'pong') {
-        pong()
+        if (pongTimeoutRef.current !== null) {
+          clearTimeout(pongTimeoutRef.current!)
+        }
       }
     }, []),
     throttle: 100,
   })
 
-  const ping = () => {
-    sendMessage({
-      messageId: uniqueId(),
-      type: 'ping',
-    })
-
-    pongTimeoutRef.current = setTimeout(onPongTimeout, PONG_TIMEOUT) as any as number
-  }
-
-  const onPongTimeout = () => {
-    console.error('Pong timed out.')
-  }
-
   useEffect(() => {
-    if (webSocketStatus === RealtimeWebSocketStatus.Open && pingIntervalRef?.current === null) {
-      pingIntervalRef.current = setInterval(ping, PING_INTERVAL) as any as number
+    if (pingIntervalRef?.current !== null) {
+      clearInterval(pingIntervalRef.current!)
+      pingIntervalRef.current = null
+    }
+    if (pongTimeoutRef?.current !== null) {
+      clearTimeout(pongTimeoutRef.current!)
+      pongTimeoutRef.current = null
+    }
+
+    if (webSocketStatus === RealtimeWebSocketStatus.Open) {
+      pingIntervalRef.current = setInterval(() => {
+        sendMessage({
+          messageId: uniqueId(),
+          type: 'ping',
+        })
+
+        pongTimeoutRef.current = setTimeout(() => {
+          console.warn('Pong timed out.')
+        }, PONG_TIMEOUT) as any as number
+      }, PING_INTERVAL) as any as number
     }
 
     return () => {
       if (pingIntervalRef?.current) {
-        clearInterval(pingIntervalRef.current)
+        clearInterval(pingIntervalRef.current!)
         pingIntervalRef.current = null
       }
+      if (pongTimeoutRef?.current !== null) {
+        clearTimeout(pongTimeoutRef.current!)
+        pongTimeoutRef.current = null
+      }
     }
-  }, [webSocketStatus])
+  }, [webSocketStatus, sendMessage])
 }

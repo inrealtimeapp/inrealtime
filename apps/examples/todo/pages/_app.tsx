@@ -11,7 +11,7 @@ import { RealtimeProvider } from '@/realtime.config'
 dayjs.extend(utc)
 
 export default function App({ Component, pageProps }: AppProps) {
-  const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
+  const startOfHour = '35' //useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
   return (
     <>
       <Head>

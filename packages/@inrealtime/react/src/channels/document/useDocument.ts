@@ -12,8 +12,7 @@ import {
 } from '../../core'
 import { RealtimeWebSocketStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
-import { IAutosave } from './store/autosave/autosave'
-import { IndexedAutosave } from './store/autosave/indexeddb_autosave'
+import { useAutosave } from './autosave/useAutosave'
 import { areStoresEqual } from './store/tests/storeEqual'
 import { DocumentPatch } from './store/types'
 import { useRealtimeStore } from './store/useRealtimeStore'
@@ -51,8 +50,10 @@ export const useDocumentChannel = <TRealtimeState>({
 }) => {
   const [status, setStatus] = useState<DocumentStatus>(DocumentStatus.Unready)
   const statusRef = useRef<DocumentStatus>(DocumentStatus.Unready)
+
   const [editStatus, setEditStatus] = useState<DocumentEditStatus>(DocumentEditStatus.Unready)
   const editStatusRef = useRef<DocumentEditStatus>(DocumentEditStatus.Unready)
+
   const [throttle, setThrottle] = useState<number>(0)
   const sendMessageRef = useRef<(message: RealtimeMessage) => void>()
 
@@ -65,13 +66,8 @@ export const useDocumentChannel = <TRealtimeState>({
   // All operations that have been unacked
   const unackedOperationsRef = useRef<DocumentOperationsRequest[]>([])
 
-  // Local stored fragment and changes
-  const autosaveDatabaseRef = useRef<IAutosave>()
-  const [localFragment, setLocalFragment] = useState<Fragment>()
-  const localChangesRef = useRef<DocumentOperationsRequest[]>([])
-  const unremovedLocalChangesRef = useRef<DocumentOperationsRequest[]>([])
-  const unsavedLocalChangesRef = useRef<DocumentOperationsRequest[]>([])
-  const unsavedChangesRef = useRef<boolean>(false)
+  // Save local changes ref
+  const saveLocalChangesRef = useRef<(request: DocumentOperationsRequest) => void>()
 
   // Send operations to the channel
   const sendOperations = useCallback((request: DocumentOperationsRequest) => {
@@ -118,10 +114,8 @@ export const useDocumentChannel = <TRealtimeState>({
       operations: requests,
     }
 
-    if (config.autosave) {
-      localChangesRef.current.push(request)
-      unsavedLocalChangesRef.current.push(request)
-      unsavedChangesRef.current = true
+    if (saveLocalChangesRef.current) {
+      saveLocalChangesRef.current!(request)
     }
 
     if (statusRef.current !== DocumentStatus.Ready) {
@@ -137,22 +131,52 @@ export const useDocumentChannel = <TRealtimeState>({
   })
   const remoteStore = useRealtimeStore<TRealtimeState>({})
 
-  // Reset a specific store
-  const resetStore = useCallback((store: 'local' | 'remote') => {
-    if (store === 'local') {
+  // Create autosave
+  const {
+    saveLocalChanges,
+    markForLocalSaving,
+    updateLocalChanges,
+    getLocalChangesToSync,
+    acknowledgeLocalChange,
+  } = useAutosave({
+    config,
+    documentId,
+    localStore,
+    onLocalData: useCallback((fragment) => {
+      if (editStatusRef.current === DocumentEditStatus.Ready) {
+        return
+      }
+
+      const document = fragmentToDocument({ fragment })
+      const fragmentIdToPath = createFragmentIdToPath({ fragment })
       localStore.setRoot({
-        document: undefined as any,
-        fragment: undefined as any,
-        fragmentIdToPath: undefined as any,
+        document,
+        fragment,
+        fragmentIdToPath: { ...fragmentIdToPath },
       })
-    } else if (store === 'remote') {
-      remoteStore.setRoot({
-        document: undefined as any,
-        fragment: undefined as any,
-        fragmentIdToPath: undefined as any,
-      })
-    }
-  }, [])
+      conflictsIdsRef.current = []
+      unackedOperationsRef.current = []
+
+      setEditStatus(DocumentEditStatus.ReadyLocal)
+      editStatusRef.current = DocumentEditStatus.ReadyLocal
+    }, []),
+    onNoLocalData: useCallback(() => {
+      if (editStatusRef.current === DocumentEditStatus.Ready) {
+        return
+      }
+
+      conflictsIdsRef.current = []
+      unackedOperationsRef.current = []
+
+      setEditStatus(DocumentEditStatus.ReadyLocal)
+      editStatusRef.current = DocumentEditStatus.ReadyLocal
+    }, []),
+  })
+
+  // Update save local changes ref
+  useEffect(() => {
+    saveLocalChangesRef.current = saveLocalChanges
+  }, [saveLocalChanges])
 
   // Update throttle to the requested throttle
   // We want to begin with throttle 0 to get subscribe message out as soon as possible, but change to the requested throttle afterwards
@@ -164,107 +188,6 @@ export const useDocumentChannel = <TRealtimeState>({
 
     setThrottle(requestedThrottle)
   }, [status, requestedThrottle])
-
-  // Load from local store
-  useEffect(() => {
-    if (!documentId || !config.autosave) {
-      setLocalFragment(undefined as any)
-      return
-    }
-
-    const autosaveDatabase = new IndexedAutosave()
-    autosaveDatabaseRef.current = autosaveDatabase
-
-    autosaveDatabase.init(documentId).then(async () => {
-      const fragmentPromise = autosaveDatabase.getFragment({ documentId })
-      const localChangesPromise = autosaveDatabase.getOperations({ documentId })
-      const fragment = await fragmentPromise
-      const localChanges = await localChangesPromise
-
-      if (fragment && localChanges) {
-        setLocalFragment(fragment)
-        localChangesRef.current = localChanges
-      }
-    })
-  }, [documentId])
-
-  // Set local store on local fragment
-  useEffect(() => {
-    if (!localFragment) {
-      return
-    }
-
-    if (statusRef.current === DocumentStatus.Ready) {
-      return
-    }
-
-    const document = fragmentToDocument({ fragment: localFragment })
-    const fragmentIdToPath = createFragmentIdToPath({ fragment: localFragment })
-    localStore.setRoot({
-      document,
-      fragment: localFragment,
-      fragmentIdToPath: { ...fragmentIdToPath },
-    })
-    conflictsIdsRef.current = []
-    unackedOperationsRef.current = []
-
-    setEditStatus(DocumentEditStatus.ReadyLocal)
-    editStatusRef.current = DocumentEditStatus.ReadyLocal
-  }, [localFragment])
-
-  // Autosave fragment and changes
-  useEffect(() => {
-    const autosaveDatabase = autosaveDatabaseRef.current
-
-    if (!autosaveDatabase || !documentId) {
-      return
-    }
-
-    const timer = setInterval(async () => {
-      if (!unsavedChangesRef.current) {
-        return
-      }
-
-      unsavedChangesRef.current = false
-
-      // Save fragment
-      const promises: Promise<any>[] = [
-        autosaveDatabase.saveFragment({
-          documentId,
-          fragment: localStore.getRoot().fragment,
-        }),
-      ]
-
-      // Save local changes
-      for (const request of unsavedLocalChangesRef.current) {
-        promises.push(autosaveDatabase.saveOperation({ documentId, message: request }))
-      }
-      localChangesRef.current.push(...unsavedLocalChangesRef.current)
-      unsavedLocalChangesRef.current = []
-
-      // Remove local changes
-      for (const request of unremovedLocalChangesRef.current) {
-        promises.push(
-          autosaveDatabase.removeOperation({ documentId, messageId: request.messageId }),
-        )
-      }
-      localChangesRef.current = localChangesRef.current.filter(
-        (request) => !unremovedLocalChangesRef.current.includes(request),
-      )
-      unremovedLocalChangesRef.current = []
-
-      for (const promise of promises) {
-        try {
-          await promise
-        } catch (error) {
-          console.error(error)
-        }
-      }
-    }, 1000)
-    return () => {
-      clearInterval(timer)
-    }
-  }, [documentId])
 
   // On sync message
   const onSyncMessage = useCallback((fragment: Fragment) => {
@@ -282,19 +205,21 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     // Apply any local changes and send them to the channel
-    if (config.autosave && localChangesRef.current.length > 0) {
-      applyRemoteOperationsToStores(localChangesRef.current, [localStore])
-      for (const request of localChangesRef.current) {
+    const localChanges = getLocalChangesToSync()
+    if (localChanges.length > 0) {
+      console.log('Applying local changes', localChanges)
+      applyRemoteOperationsToStores(localChanges, [localStore])
+      for (const request of localChanges) {
         sendOperations(request)
       }
-      localChangesRef.current = []
-      unsavedChangesRef.current = true
     }
 
     setStatus(DocumentStatus.Ready)
     setEditStatus(DocumentEditStatus.Ready)
     statusRef.current = DocumentStatus.Ready
     editStatusRef.current = DocumentEditStatus.Ready
+
+    markForLocalSaving()
   }, [])
 
   // On ack message
@@ -334,28 +259,8 @@ export const useDocumentChannel = <TRealtimeState>({
     // Apply operation to remote
     applyRemoteOperationsToStores([request], [remoteStore])
 
-    if (config.autosave) {
-      unsavedChangesRef.current = true
-
-      // If the local changed hasn't been saved we can just remove it
-      // Otherwise we need to remove the operation from the saved local change
-      const unsavedLocalChange = unsavedLocalChangesRef.current.find(
-        (r) => r.messageId === ack.ackMessageId,
-      )!
-      if (unsavedLocalChange) {
-        unsavedLocalChangesRef.current.splice(
-          unsavedLocalChangesRef.current.indexOf(unsavedLocalChange),
-          1,
-        )
-      } else {
-        const localChange = localChangesRef.current.find((r) => r.messageId === ack.ackMessageId)!
-        if (localChange) {
-          unremovedLocalChangesRef.current.push(localChange)
-        } else {
-          console.warn("Couldn't find local change for acked operation")
-        }
-      }
-    }
+    // Acknowledge local change
+    acknowledgeLocalChange(ack.ackMessageId)
 
     // If all messages have been acked resolve conflicts
     // This is done because we don't overwrite local content whilst the user is in the process of updating
@@ -409,7 +314,7 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     applyRemoteOperationsToStores([message], [localStore, remoteStore])
-    unsavedChangesRef.current = true
+    markForLocalSaving()
   }, [])
 
   // On document message
@@ -450,6 +355,10 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // Group messages and merge ops messages together
   const groupMessagesOnSend = useCallback((messages: RealtimeMessage[]): RealtimeMessage[] => {
+    // TODO @@
+    if (true) {
+      return messages
+    }
     const notOpsMessages = messages.filter((m) => m.type !== OpsMessageType)
 
     const opsMessages = messages.filter(
@@ -481,22 +390,9 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     // We will need to update local changes to remove the operations that were merged into the grouped message and instead add the grouped message
-    if (config.autosave) {
-      // We will need to remove all operations from unsaved local changes
-      unsavedLocalChangesRef.current = unsavedLocalChangesRef.current.filter(
-        (opMessage) => !opsMessages.includes(opMessage),
-      )
+    updateLocalChanges({ removedChanges: opsMessages, addedChanges: [groupedMessage] })
 
-      // We will need to add all operations in localChanges to unremovedLocalChanges
-      const localChangesToRemove = localChangesRef.current.filter((opMessage) =>
-        opsMessages.includes(opMessage),
-      )
-      unremovedLocalChangesRef.current.push(...localChangesToRemove)
-
-      // We will need to add the new grouped message to unsavedLocalChanges
-      unsavedLocalChangesRef.current.push(groupedMessage)
-    }
-
+    // Remove the now acked operations
     unackedOperationsRef.current = unackedOperationsRef.current.filter(
       (opMessage) => !opsMessages.includes(opMessage),
     )
@@ -519,6 +415,22 @@ export const useDocumentChannel = <TRealtimeState>({
     sendMessageRef.current = sendMessage
   }, [sendMessage])
 
+  // Reset stores on document change
+  useEffect(() => {
+    conflictsIdsRef.current = []
+    unackedOperationsRef.current = []
+    localStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+    remoteStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+  }, [documentId])
+
   // On websocket changes
   // Here we handle initial subscriptions, disconnections and re-subscriptions
   useEffect(() => {
@@ -528,11 +440,24 @@ export const useDocumentChannel = <TRealtimeState>({
       setStatus(DocumentStatus.Unready)
       statusRef.current = DocumentStatus.Unready
 
-      if (!config.autosave) {
+      // If autosave is disabled or editing is not ready, either remote or local, we reset the stores
+      if (
+        !config.autosave ||
+        (editStatusRef.current !== DocumentEditStatus.Ready &&
+          editStatusRef.current !== DocumentEditStatus.ReadyLocal)
+      ) {
         conflictsIdsRef.current = []
         unackedOperationsRef.current = []
-        resetStore('local')
-        resetStore('remote')
+        localStore.setRoot({
+          document: undefined as any,
+          fragment: undefined as any,
+          fragmentIdToPath: undefined as any,
+        })
+        remoteStore.setRoot({
+          document: undefined as any,
+          fragment: undefined as any,
+          fragmentIdToPath: undefined as any,
+        })
 
         setEditStatus(DocumentEditStatus.Unready)
         editStatusRef.current = DocumentEditStatus.Unready
