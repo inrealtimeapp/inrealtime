@@ -32,6 +32,8 @@ const _getSubDocument = (document: any, path: ImmerPath) => {
  * Get operations made to a list
  */
 const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): ImmerOperation[] => {
+  console.log('old', [...oldList], 'new', [...newList])
+
   oldList = [...oldList]
   const operations: ImmerOperation[] = []
   let i = 0
@@ -156,6 +158,8 @@ export const applyPatchOperationsToFragment = ({
   const requests: DocumentOperationRequest[] = []
 
   let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
+
+  console.log('operations', JSON.parse(JSON.stringify(operations)))
 
   for (const operation of operations) {
     if (operation.op === 'root') {

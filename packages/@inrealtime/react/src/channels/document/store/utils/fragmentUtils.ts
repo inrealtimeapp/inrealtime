@@ -1,7 +1,6 @@
 import {
   clone,
   Fragment,
-  FragmentList,
   FragmentType,
   FragmentTypeBoolean,
   FragmentTypeList,
@@ -171,7 +170,7 @@ export const documentToFragment = (document: any): Fragment => {
   const rootType = getFragmentType(document)
   const rootFragment: Fragment = {
     id: uniqueId(),
-    type: rootType,
+    type: rootType as any,
     value: rootType == FragmentTypeMap || rootType == FragmentTypeList ? {} : document,
   }
 
@@ -197,7 +196,7 @@ export const documentToFragment = (document: any): Fragment => {
     const fragment: Fragment = {
       id: id,
       parentId: parentFragment.id,
-      type: type,
+      type: type as any,
       value: document,
     }
     if (parentMapKey) {

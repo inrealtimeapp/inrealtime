@@ -2,7 +2,7 @@ import { RealtimeStatus } from '@inrealtime/react'
 import { Reorder } from 'framer-motion'
 import { nanoid } from 'nanoid'
 import { Inter } from 'next/font/google'
-import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react'
 
 import { Avatars, Item } from '@/components'
 import { usePatch, useStatus, useStore } from '@/realtime.config'

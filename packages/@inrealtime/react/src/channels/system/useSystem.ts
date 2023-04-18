@@ -46,6 +46,10 @@ export const useSystemChannel = ({
           type: 'ping',
         })
 
+        if (pongTimeoutRef?.current !== null) {
+          clearTimeout(pongTimeoutRef.current!)
+        }
+
         pongTimeoutRef.current = setTimeout(() => {
           console.warn('Pong timed out.')
         }, PONG_TIMEOUT) as any as number

@@ -207,7 +207,6 @@ export const useDocumentChannel = <TRealtimeState>({
     // Apply any local changes and send them to the channel
     const localChanges = getLocalChangesToSync()
     if (localChanges.length > 0) {
-      console.log('Applying local changes', localChanges)
       applyRemoteOperationsToStores(localChanges, [localStore])
       for (const request of localChanges) {
         sendOperations(request)
@@ -355,10 +354,6 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // Group messages and merge ops messages together
   const groupMessagesOnSend = useCallback((messages: RealtimeMessage[]): RealtimeMessage[] => {
-    // TODO @@
-    if (true) {
-      return messages
-    }
     const notOpsMessages = messages.filter((m) => m.type !== OpsMessageType)
 
     const opsMessages = messages.filter(
@@ -378,19 +373,21 @@ export const useDocumentChannel = <TRealtimeState>({
     const minifiedOperations = minifyOperations(operations) as DocumentOperationRequest[]
 
     // Create a single grouped message
-    const groupedMessage: DocumentOperationsRequest = {
-      messageId: uniqueId(),
-      type: OpsMessageType,
-      operations: minifiedOperations,
-    }
+    const groupedMessages: DocumentOperationsRequest[] = [
+      {
+        messageId: uniqueId(),
+        type: OpsMessageType,
+        operations: minifiedOperations,
+      },
+    ]
 
     if (minifiedOperations.length > 0) {
       const opsIndex = unackedOperationsRef.current.indexOf(opsMessages[0])
-      unackedOperationsRef.current.splice(opsIndex < 0 ? 0 : opsIndex, 0, groupedMessage)
+      unackedOperationsRef.current.splice(opsIndex < 0 ? 0 : opsIndex, 0, ...groupedMessages)
     }
 
     // We will need to update local changes to remove the operations that were merged into the grouped message and instead add the grouped message
-    updateLocalChanges({ removedChanges: opsMessages, addedChanges: [groupedMessage] })
+    updateLocalChanges({ removedChanges: opsMessages, addedChanges: groupedMessages })
 
     // Remove the now acked operations
     unackedOperationsRef.current = unackedOperationsRef.current.filter(
@@ -398,7 +395,7 @@ export const useDocumentChannel = <TRealtimeState>({
     )
 
     if (minifiedOperations.length > 0) {
-      return [...notOpsMessages, groupedMessage]
+      return [...notOpsMessages, ...groupedMessages]
     }
     return notOpsMessages
   }, [])
