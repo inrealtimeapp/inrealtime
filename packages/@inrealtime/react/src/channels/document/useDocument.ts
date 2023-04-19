@@ -7,6 +7,7 @@ import {
   DocumentOperationsRequest,
   DocumentOperationsResponse,
   Fragment,
+  FragmentTypeList,
   RealtimeMessage,
   uniqueId,
 } from '../../core'
@@ -17,6 +18,7 @@ import { areStoresEqual } from './store/tests/storeEqual'
 import { DocumentPatch } from './store/types'
 import { useRealtimeStore } from './store/useRealtimeStore'
 import { fragmentToDocument } from './store/utils/fragmentUtils'
+import { ImmutableFragment } from './store/utils/immutableFragment'
 import { minifyOperations } from './store/utils/minifyOperations'
 import { createFragmentIdToPath } from './store/utils/pathUtils'
 import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtils'
@@ -146,6 +148,11 @@ export const useDocumentChannel = <TRealtimeState>({
       if (editStatusRef.current === DocumentEditStatus.Ready) {
         return
       }
+      if (fragment.type !== FragmentTypeList && fragment.type !== ImmutableFragment) {
+        return
+      }
+
+      console.log(fragment)
 
       const document = fragmentToDocument({ fragment })
       const fragmentIdToPath = createFragmentIdToPath({ fragment })
@@ -168,8 +175,8 @@ export const useDocumentChannel = <TRealtimeState>({
       conflictsIdsRef.current = []
       unackedOperationsRef.current = []
 
-      setEditStatus(DocumentEditStatus.ReadyLocal)
-      editStatusRef.current = DocumentEditStatus.ReadyLocal
+      setEditStatus(DocumentEditStatus.Unready)
+      editStatusRef.current = DocumentEditStatus.Unready
     }, []),
   })
 

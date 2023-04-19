@@ -5,6 +5,7 @@ import {
   DocumentOperationRequest,
   Fragment,
   isList,
+  isNumber,
   listsShallowEqual,
 } from '../../../../core'
 import { ImmerOperation } from '../types'
@@ -28,46 +29,108 @@ const _getSubDocument = (document: any, path: ImmerPath) => {
   return subDocument
 }
 
-/**
- * Get operations made to a list
- */
-const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): ImmerOperation[] => {
-  console.log('old', [...oldList], 'new', [...newList])
+export const getListOperations = (
+  path: ImmerPath,
+  patches: Patch[],
+  oldList: any[],
+  newList: any[],
+): ImmerOperation[] => {
+  oldList = [...oldList] // We modify the list
 
-  oldList = [...oldList]
-  const operations: ImmerOperation[] = []
-  let i = 0
-  let j = 0
-  while (i < oldList.length && j < newList.length) {
-    if (oldList[i] === newList[j]) {
-      i++
-      j++
-    } else if (newList.indexOf(oldList[i]) === -1) {
-      operations.push({ op: 'delete', path, index: i })
-      oldList.splice(i, 1)
-    } else if (oldList.indexOf(newList[j]) === -1) {
-      operations.push({ op: 'insert', path, index: i, value: newList[j] })
-      oldList.splice(i, 0, newList[j])
-      i++
-      j++
-    } else {
-      const k = oldList.indexOf(newList[j], i)
-      operations.push({ op: 'move', path, oldIndex: k, newIndex: i })
-      const temp = oldList[k]
-      for (let l = k; l > i; l--) {
-        oldList[l] = oldList[l - 1]
+  const operations: ImmerOperation[] = patches
+    .map((patch): ImmerOperation | undefined => {
+      if (patch.path.length === 0) {
+        return undefined
       }
-      oldList[i] = temp
+      const index = patch.path[patch.path.length - 1]
+      if (!isNumber(index)) {
+        return undefined
+      }
+
+      switch (patch.op) {
+        case 'replace':
+          return {
+            op: 'replace',
+            path,
+            index,
+            value: patch.value,
+          }
+        case 'add':
+          return {
+            op: 'replace',
+            path,
+            index: index,
+            value: patch.value,
+          }
+        case 'remove':
+          return {
+            op: 'delete',
+            path,
+            index,
+          }
+      }
+
+      return undefined
+    })
+    .filter((operation) => operation !== undefined) as ImmerOperation[]
+
+  // Generate move operations from combining replace operations
+  const finalOperations: ImmerOperation[] = []
+  while (operations.length > 0) {
+    const operation = operations.shift()
+    if (operation === undefined) {
+      break
     }
+
+    if (operation.op !== 'replace') {
+      finalOperations.push(operation)
+
+      if (operation.op === 'delete') {
+        oldList.splice(operation.index as number, 1)
+      }
+
+      continue
+    }
+
+    const oldIndex = oldList.indexOf(operation.value)
+    const newIndex = operation.index as number
+
+    if (oldIndex < 0) {
+      finalOperations.push(operation)
+
+      if (operation.op === 'delete') {
+        oldList.splice(operation.index as number, 1)
+      } else if (operation.op === 'replace' && operation.index >= oldList.length) {
+        operation.op = 'insert'
+        oldList.splice(operation.index as number, 0, {})
+      }
+
+      continue
+    }
+
+    if (oldIndex === newIndex) {
+      continue
+    }
+
+    const replacedOperation = finalOperations.find(
+      (op) => op.op === 'replace' && op.index === oldIndex,
+    )
+    if (replacedOperation) {
+      replacedOperation.op = 'insert'
+    }
+
+    oldList.splice(oldIndex, 1)
+    oldList.splice(newIndex, 0, {})
+
+    finalOperations.push({
+      op: 'move',
+      path,
+      oldIndex,
+      newIndex,
+    })
   }
-  while (i < oldList.length) {
-    operations.push({ op: 'delete', path, index: i })
-    oldList.splice(i, 1)
-  }
-  while (j < newList.length) {
-    operations.push({ op: 'insert', path, index: i++, value: newList[j++] })
-  }
-  return operations
+
+  return finalOperations
 }
 
 /**
@@ -102,6 +165,7 @@ export const immerPatchesToOperations = <TRealtimeState>({
     const parentDocument = _getSubDocument(newDocument, parentPath)
     if (parentDocument && isList(parentDocument)) {
       // Group all list patches together
+      const listPatches: Patch[] = [currentPatch]
       while (++index) {
         if (patches.length <= index) {
           break
@@ -115,10 +179,13 @@ export const immerPatchesToOperations = <TRealtimeState>({
         ) {
           break
         }
+        listPatches.push(nextListPatch)
       }
 
       const oldParentDocument = _getSubDocument(oldDocument, parentPath)
-      operations.push(..._getListOperations(parentPath, oldParentDocument, parentDocument))
+      operations.push(
+        ...getListOperations(parentPath, listPatches, oldParentDocument, parentDocument),
+      )
       continue
     }
 
@@ -158,9 +225,7 @@ export const applyPatchOperationsToFragment = ({
   const requests: DocumentOperationRequest[] = []
 
   let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
-
-  console.log('operations', JSON.parse(JSON.stringify(operations)))
-
+  console.log(operations)
   for (const operation of operations) {
     if (operation.op === 'root') {
       if (operations.length > 1) {
@@ -212,19 +277,24 @@ export const applyPatchOperationsToFragment = ({
         break
       case 'move':
         {
-          const { movedFragment, toIndex } = immutableFragment.moveIndexAtImmerPath({
-            listImmerPath: operation.path,
-            fromIndex: operation.oldIndex,
-            toIndex: operation.newIndex,
-          })
+          try {
+            const { movedFragment, toIndex } = immutableFragment.moveIndexAtImmerPath({
+              listImmerPath: operation.path,
+              fromIndex: operation.oldIndex,
+              toIndex: operation.newIndex,
+            })
 
-          // Insert requests
-          requests.push({
-            op: 'move',
-            id: movedFragment.id,
-            index: toIndex,
-            parentId: movedFragment.parentId!,
-          })
+            // Insert requests
+            requests.push({
+              op: 'move',
+              id: movedFragment.id,
+              index: toIndex,
+              parentId: movedFragment.parentId!,
+            })
+          } catch (error) {
+            console.warn('Error while applying move operation', error, operation)
+            throw error
+          }
         }
         break
       default:

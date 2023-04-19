@@ -10,7 +10,7 @@
     "strictPropertyInitialization": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "rootDir": "src",
+    "rootDir": "src"
   },
   "editor.codeActionsOnSave": {
     "source.fixAll.tslint": true

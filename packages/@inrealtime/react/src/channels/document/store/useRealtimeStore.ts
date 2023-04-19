@@ -85,6 +85,7 @@ export const useRealtimeStore = <TRealtimeState>({
             oldDocument,
             newDocument,
           })
+          console.log('patches', patches)
 
           const { newFragment, newFragmentIdToPath, requests } = applyPatchOperationsToFragment({
             fragment: oldFragment,

@@ -17,6 +17,38 @@ export default function Home() {
 
   const items = useStore((root) => root?.todos)
 
+  // TODO REMOVE
+  const value = useStore((root: any) => root?.test) ?? []
+
+  const onChange = (i: number, e: any) => {
+    patch((root: any) => {
+      console.log('e.target.value', e.target.value)
+      root.test[i] = e.target.value
+    })
+  }
+
+  useEffect(() => {
+    if (status !== RealtimeStatus.Ready) {
+      return
+    }
+    patch((root: any) => {
+      if (!root.test) {
+        root.test = ['1', '2', '3', '4', '5']
+      }
+    })
+    // const interval = setInterval(() => {
+    //   patch((root: any) => {
+    //     root.test[1] = root.test[1] + '1'
+    //     if (root.test[1].length > 10) {
+    //       root.test[1] = '7'
+    //     }
+    //   })
+    // }, 10)
+    //
+    // return () => clearInterval(interval)
+  }, [status])
+  // TODO REMOVE END
+
   const onChangeTitle = (e: ChangeEvent<HTMLInputElement>) => {
     setWorkingTitle(e?.target?.value ?? '')
   }
@@ -81,6 +113,12 @@ export default function Home() {
         The todo items below are written by users all over the world since this document is
         connected to the Realtime services. We take no responsibility for what they might say.
       </p>
+
+      <div className='flex flex-col gap-1 text-neutral-950'>
+        {value.map((val: string, i: number) => (
+          <input key={i} value={val} onChange={(e) => onChange(i, e)} />
+        ))}
+      </div>
 
       <div className=''>
         <Avatars />
