@@ -4,10 +4,8 @@ import {
   clone,
   DocumentOperationRequest,
   Fragment,
-  FragmentTypeList,
   isList,
   listsShallowEqual,
-  uniqueId,
 } from '../../../../core'
 import { ImmerOperation } from '../types'
 import { documentToFragment } from './fragmentUtils'
@@ -33,13 +31,18 @@ const _getSubDocument = (document: any, path: ImmerPath) => {
 /**
  * Get operations made to a list
  */
-const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): ImmerOperation[] => {
-  console.log('getListOperations', 'oldList', clone(oldList), 'newList', clone(newList))
+const _getListOperations = (
+  path: ImmerPath,
+  listPatches: Patch[],
+  oldList: any[],
+  newList: any[],
+): ImmerOperation[] => {
   oldList = [...oldList]
   const operations: ImmerOperation[] = []
   let i = 0
   let j = 0
   const deletedOperations: { [index: number]: ImmerOperation } = {}
+  const replaceOperations: ImmerOperation[] = []
   while (i < oldList.length && j < newList.length) {
     if (oldList[i] === newList[j]) {
       i++
@@ -62,6 +65,7 @@ const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): Im
 
         const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
         operations.push(replaceOp)
+        replaceOperations.push(replaceOp)
       } else {
         const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
         operations.push(insertOp)
@@ -73,7 +77,7 @@ const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): Im
       j++
     } else {
       const k = oldList.indexOf(newList[j], i)
-      operations.push({ op: 'move', path, oldIndex: k, newIndex: i })
+      operations.push({ op: 'move', path, oldIndex: k < 0 ? oldList.length - 1 : k, newIndex: i })
       const temp = oldList[k]
       for (let l = k; l > i; l--) {
         oldList[l] = oldList[l - 1]
@@ -89,6 +93,26 @@ const _getListOperations = (path: ImmerPath, oldList: any[], newList: any[]): Im
     operations.push({ op: 'insert', path, index: i++, value: newList[j++] })
   }
 
+  // Remove operations that haven't been applied by immer
+  const finalOperations: ImmerOperation[] = []
+  for (const operation of operations) {
+    if (operation.op !== 'delete' && operation.op !== 'insert' && operation.op !== 'replace') {
+      finalOperations.push(operation)
+      continue
+    }
+
+    const listPatch = listPatches.find(
+      (op) =>
+        (op.op === 'replace' || op.op === 'add') &&
+        op.path.length > 0 &&
+        op.path[op.path.length - 1] === operation.index,
+    )
+    if (!listPatch) {
+      continue
+    }
+
+    finalOperations.push(operation)
+  }
   return operations
 }
 
@@ -124,6 +148,7 @@ export const immerPatchesToOperations = <TRealtimeState>({
     const parentDocument = _getSubDocument(newDocument, parentPath)
     if (parentDocument && isList(parentDocument)) {
       // Group all list patches together
+      const listPatches: Patch[] = [currentPatch]
       while (++index) {
         if (patches.length <= index) {
           break
@@ -137,10 +162,13 @@ export const immerPatchesToOperations = <TRealtimeState>({
         ) {
           break
         }
+        listPatches.push(nextListPatch)
       }
 
       const oldParentDocument = _getSubDocument(oldDocument, parentPath)
-      operations.push(..._getListOperations(parentPath, oldParentDocument, parentDocument))
+      operations.push(
+        ..._getListOperations(parentPath, listPatches, oldParentDocument, parentDocument),
+      )
       continue
     }
 
@@ -190,8 +218,6 @@ export const applyPatchOperationsToFragment = ({
   const requests: DocumentOperationRequest[] = []
 
   let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
-
-  console.log('operations', clone(operations))
 
   for (const operation of operations) {
     if (operation.op === 'root') {

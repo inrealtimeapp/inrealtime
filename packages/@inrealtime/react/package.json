@@ -29,7 +29,7 @@
     "react": "*"
   },
   "dependencies": {
-    "immer": "^9.0.19",
+    "immer": "^10.0.1",
     "simple-zustand-devtools": "^1.1.0",
     "zustand": "^4.3.7"
   },
