@@ -45,6 +45,6 @@ export type RealtimeStore<TRealtimeState> = {
 
 export type ImmerOperation =
   | { op: 'root'; path: ImmerPath; value: any }
-  | { op: 'insert'; path: ImmerPath; index: string | number; value: any }
+  | { op: 'insert' | 'replace'; path: ImmerPath; index: string | number; value: any }
   | { op: 'move'; path: ImmerPath; oldIndex: number; newIndex: number }
   | { op: 'delete'; path: ImmerPath; index: string | number }

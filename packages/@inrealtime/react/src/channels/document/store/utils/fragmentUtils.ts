@@ -32,7 +32,7 @@ export const getFragmentType = (fragment: any): FragmentType => {
     case isString(fragment):
       return FragmentTypeString
   }
-  throw new Error('Error evaluating fragment type.')
+  throw new Error(`Error evaluating fragment type for value '${fragment}'.`)
 }
 
 /**
@@ -165,12 +165,12 @@ const getFragmentSubItems = ({
 /**
  * Create a document fragment from a document including a lookup tree
  */
-export const documentToFragment = (document: any): Fragment => {
+export const documentToFragment = (document: any, rootFragmentId?: string): Fragment => {
   document = clone(document) // Clone the document to avoid consequences of it being edited
 
   const rootType = getFragmentType(document)
   const rootFragment: Fragment = {
-    id: uniqueId(),
+    id: rootFragmentId ?? uniqueId(),
     type: rootType,
     value: rootType == FragmentTypeMap || rootType == FragmentTypeList ? {} : document,
   }
