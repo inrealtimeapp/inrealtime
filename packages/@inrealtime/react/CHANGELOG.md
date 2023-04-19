@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.5
+
+### Patch Changes
+
+- Fixes to list fragment changes
+
 ## 0.1.4
 
 ### Patch Changes
