@@ -31,7 +31,7 @@ export default function Home() {
     }
 
     patch((root) => {
-      if (!root.nodes) {
+      if (!root.nodes || root.nodes.length > 35) {
         root.nodes = [
           {
             n: `node-${randomIntFromInterval(0, 300)}`,
@@ -46,7 +46,7 @@ export default function Home() {
 
       const getRandomIndex = () => randomIntFromInterval(0, root.nodes.length - 1)
 
-      const ids = [0, 1, 2, 3]
+      const ids = [0, 1, 2, 3, 4]
       const ranIndex = randomIntFromInterval(0, ids.length - 1)
       const ran: number = ids[ranIndex]
       switch (ran) {
@@ -100,6 +100,21 @@ export default function Home() {
               x: randomIntFromInterval(50, 200),
               y: randomIntFromInterval(50, 200),
             }
+          }
+          break
+        case 4:
+          {
+            // Replace a random node
+            if (root.nodes.length <= 0) {
+              return
+            }
+            const index = getRandomIndex()
+            // console.log(`Updated position on node at index ${index}`)
+            // Set random node's position
+            root.nodes[index] = {
+              n: `node-${randomIntFromInterval(0, 300)}`,
+              position: { x: randomIntFromInterval(50, 200), y: randomIntFromInterval(50, 200) },
+            } as any
           }
           break
       }

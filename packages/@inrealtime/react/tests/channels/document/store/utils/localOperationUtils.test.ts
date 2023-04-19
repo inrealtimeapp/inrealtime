@@ -44,10 +44,8 @@ describe('localOperationUtils', () => {
         expectedOperations: [
           { op: 'replace', path: ['list'], index: 0, value: 10 },
           { op: 'move', path: ['list'], oldIndex: 2, newIndex: 1 },
-          { op: 'move', path: ['list'], oldIndex: 4, newIndex: 3 },
-          { op: 'move', path: ['list'], oldIndex: 5, newIndex: 4 },
-          { op: 'move', path: ['list'], oldIndex: 6, newIndex: 5 },
-          { op: 'replace', path: ['list'], index: 6, value: 5 },
+          { op: 'delete', path: ['list'], index: 3 },
+          { op: 'insert', path: ['list'], index: 6, value: 5 },
           { op: 'insert', path: ['list'], index: 7, value: 25 },
         ],
       },
@@ -58,16 +56,14 @@ describe('localOperationUtils', () => {
         operation: (data: any) => {
           data.list[2] = 4
           data.list[3] = 6
-          data.list[8] = 8
+          data.list[4] = 8
           // Should end in  [1, 2, 4, 6, 8]
         },
         expectedOperations: [
-          { op: 'move', path: ['list'], oldIndex: 3, newIndex: 2 },
-          { op: 'replace', path: ['list'], index: 3, value: 6 },
-          { op: 'insert', path: ['list'], index: 5, value: undefined },
-          { op: 'insert', path: ['list'], index: 6, value: undefined },
-          { op: 'insert', path: ['list'], index: 7, value: undefined },
-          { op: 'insert', path: ['list'], index: 8, value: 8 },
+          { op: 'delete', path: ['list'], index: 2 },
+          { op: 'delete', path: ['list'], index: 3 },
+          { op: 'insert', path: ['list'], index: 3, value: 6 },
+          { op: 'insert', path: ['list'], index: 4, value: 8 },
         ],
       },
       {
@@ -93,17 +89,32 @@ describe('localOperationUtils', () => {
            */
         },
         expectedOperations: [
-          { op: 'delete', path: ['list', 0], index: 'checked' },
-          { op: 'insert', path: ['list', 0], index: 'checked', value: true },
-          { op: 'delete', path: ['list', 1], index: 'checked' },
-          { op: 'insert', path: ['list', 1], index: 'checked', value: false },
+          { op: 'replace', path: ['list', 0], index: 'checked', value: true },
+          {
+            op: 'replace',
+            path: ['list', 1],
+            index: 'checked',
+            value: false,
+          },
+          { op: 'delete', path: ['list'], index: 0 },
+          {
+            op: 'replace',
+            path: ['list'],
+            index: 0,
+            value: { title: 'Item 1', checked: true },
+          },
+          {
+            op: 'insert',
+            path: ['list'],
+            index: 1,
+            value: { title: 'Item 2', checked: false },
+          },
           {
             op: 'insert',
             path: ['list'],
             index: 2,
             value: { title: 'Item 5', checked: false },
           },
-          { op: 'move', path: ['list'], oldIndex: 2, newIndex: 3 },
           {
             op: 'insert',
             path: ['list'],
@@ -123,10 +134,7 @@ describe('localOperationUtils', () => {
         operation: (data: any) => {
           data.list = []
         },
-        expectedOperations: [
-          { op: 'delete', path: [], index: 'list' },
-          { op: 'insert', path: [], index: 'list', value: [] },
-        ],
+        expectedOperations: [{ op: 'replace', path: [], index: 'list', value: [] }],
       },
       {
         data: {
@@ -139,11 +147,7 @@ describe('localOperationUtils', () => {
         operation: (data: any) => {
           data.list.splice(0, 1)
         },
-        expectedOperations: [
-          { op: 'move', path: ['list'], oldIndex: 1, newIndex: 0 },
-          { op: 'move', path: ['list'], oldIndex: 2, newIndex: 1 },
-          { op: 'delete', path: ['list'], index: 2 },
-        ],
+        expectedOperations: [{ op: 'delete', path: ['list'], index: 0 }],
       },
       {
         data: {
@@ -157,8 +161,8 @@ describe('localOperationUtils', () => {
           data.list.splice(0, data.list.length)
         },
         expectedOperations: [
-          { op: 'delete', path: ['list'], index: 2 },
-          { op: 'delete', path: ['list'], index: 1 },
+          { op: 'delete', path: ['list'], index: 0 },
+          { op: 'delete', path: ['list'], index: 0 },
           { op: 'delete', path: ['list'], index: 0 },
         ],
       },
@@ -229,44 +233,6 @@ describe('localOperationUtils', () => {
       expect(result).toEqual(newDocument)
       expect(expectedOperations).toEqual(operationsCloned)
     }
-
-    /*
-
-    for (const { oldList, newList, expectedOperations } of lists) {
-      const operations = immerPatchesToOperations([], oldList, newList)
-      const result = [...oldList]
-
-      operations.forEach(({ op, index, value, oldIndex, newIndex }) => {
-        if (
-          (index !== undefined && index < 0) ||
-          (oldIndex !== undefined && oldIndex < 0) ||
-          (newIndex !== undefined && newIndex < 0)
-        ) {
-          throw new Error(`Invalid index in op '${op}'. ${JSON.stringify(operations)}.`)
-        }
-        switch (op) {
-          case 'replace':
-            result[index] = value
-            break
-          case 'delete':
-            result.splice(index, 1)
-            break
-          case 'insert':
-            result.splice(index, 0, value)
-            break
-          case 'move':
-            result.splice(newIndex, 0, result[oldIndex])
-            result.splice(oldIndex + (oldIndex > newIndex ? 1 : 0), 1)
-            break
-          default:
-            break
-        }
-      })
-      console.log('operations', operations, 'newList', newList, 'oldList', oldList)
-      //expect(result).toEqual(newList)
-      //expect(operations).toEqual(expectedOperations)
-    }
-     */
   })
 })
 

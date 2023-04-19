@@ -8,6 +8,7 @@ import {
   DocumentOperationsResponse,
   Fragment,
   FragmentTypeList,
+  FragmentTypeMap,
   RealtimeMessage,
   uniqueId,
 } from '../../core'
@@ -148,7 +149,7 @@ export const useDocumentChannel = <TRealtimeState>({
       if (editStatusRef.current === DocumentEditStatus.Ready) {
         return
       }
-      if (fragment.type !== FragmentTypeList && fragment.type !== ImmutableFragment) {
+      if (fragment.type !== FragmentTypeList && fragment.type !== FragmentTypeMap) {
         return
       }
 
