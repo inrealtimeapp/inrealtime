@@ -12,6 +12,7 @@ import {
   FragmentTypeList,
 } from '../../../../core'
 import { RealtimeStore } from '../types'
+import { Debug } from './debug'
 import { fragmentToDocument } from './fragmentUtils'
 import { createImmutableFragment } from './immutableFragment'
 import { minifyOperations } from './minifyOperations'
@@ -41,7 +42,14 @@ export const applyRemoteOperationsToStores = (
     },
   ]
 
-  stores.forEach((store) => store.applyRemoteOperations(newMessages))
+  stores.forEach((store) => {
+    try {
+      store.applyRemoteOperations(newMessages)
+    } catch (error) {
+      console.error(`Error with store ${store.getName()}`, error)
+      throw error
+    }
+  })
 }
 
 /**
@@ -52,11 +60,13 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
   fragment,
   fragmentIdToPath,
   messages,
+  storeName,
 }: {
   document: TRealtimeState
   fragment: Fragment
   fragmentIdToPath: FragmentIdToPath
   messages: (DocumentOperationsResponse | DocumentOperationsRequest)[]
+  storeName: string
 }): {
   newDocument: TRealtimeState
   newFragment: Fragment
@@ -90,12 +100,22 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
       switch (operation.op) {
         case 'insert':
           {
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Insert started on fragment ${operation.value.id}`,
+              )
+            }
             const insertWithFragmentIdResult = immutableFragment.insertWithFragmentId({
               insertedFragment: clone(operation.value),
               parentFragmentId: operation.parentId,
             })
 
             if (!insertWithFragmentIdResult) {
+              if (Debug.debugRemoteOperations) {
+                console.log(
+                  `[Remote operation in store ${storeName}] Insert did not finish on fragment ${operation.value.id}`,
+                )
+              }
               continue
             }
 
@@ -118,6 +138,12 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
               // Add to map
               const index = insertedFragment.parentMapKey!
               parentDocument[index] = insertedDocument
+            }
+
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Insert completed on fragment ${operation.value.id}`,
+              )
             }
           }
           break
@@ -179,11 +205,22 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
           break
         case 'delete':
           {
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Delete started on fragment ${operation.id}`,
+              )
+            }
+
             const deleteWithFragmentIdResult = immutableFragment.deleteWithFragmentId({
               fragmentId: operation.id,
             })
 
             if (!deleteWithFragmentIdResult) {
+              if (Debug.debugRemoteOperations) {
+                console.log(
+                  `[Remote operation in store ${storeName}] Delete did not finish on fragment ${operation.id}`,
+                )
+              }
               continue
             }
 
@@ -207,16 +244,32 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
               // Remove from map
               delete parentDocument[removedIndex]
             }
+
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Delete successfully on fragment ${operation.id}`,
+              )
+            }
           }
           break
         case 'move':
           {
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Moving fragment ${operation.id}`,
+              )
+            }
             const moveIndexWithFragmentIdResult = immutableFragment.moveIndexWithFragmentId({
               fragmentId: operation.id,
               toIndex: operation.index,
             })
 
             if (!moveIndexWithFragmentIdResult) {
+              if (Debug.debugRemoteOperations) {
+                console.log(
+                  `[Remote operation in store ${storeName}] Moving failed for fragment ${operation.id}`,
+                )
+              }
               continue
             }
 
@@ -227,6 +280,12 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
               listFragmentPath,
             )
             list.splice(toIndex, 0, list.splice(fromIndex, 1)[0])
+
+            if (Debug.debugRemoteOperations) {
+              console.log(
+                `[Remote operation in store ${storeName}] Moving was successful for fragment ${operation.id}`,
+              )
+            }
           }
           break
         default:

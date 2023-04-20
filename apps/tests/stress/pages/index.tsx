@@ -132,7 +132,7 @@ export default function Home() {
   useEffect(() => {
     randomInterval.current = setInterval(() => {
       doRandom()
-    }, 30)
+    }, 15)
 
     return () => {
       clearInterval(randomInterval.current!)

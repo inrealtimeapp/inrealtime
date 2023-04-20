@@ -105,9 +105,11 @@ export const useOperations = <TRealtimeState>({
   const localStore = useRealtimeStore<TRealtimeState>({
     onPatchOperations: onLocalPatchOperations,
     devtools: config.developerSettings.devtools ? { name: 'Local store' } : undefined,
+    name: 'local',
   })
   const remoteStore = useRealtimeStore<TRealtimeState>({
     devtools: config.developerSettings.devtools ? { name: 'Remote store' } : undefined,
+    name: 'remote',
   })
 
   // Reset
