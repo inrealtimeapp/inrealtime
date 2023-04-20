@@ -34,11 +34,6 @@ export default function Home() {
 
     patch((root) => {
       if (!root.nodes || root.nodes.length > 35) {
-        console.log(
-          'Resetting nodes',
-          root.nodes ? root.nodes.length : "doesn't exist",
-          root.nodes ? JSON.parse(JSON.stringify(root.nodes)) : '',
-        )
         root.nodes = [
           {
             n: `node-${randomIntFromInterval(0, 300)}`,
