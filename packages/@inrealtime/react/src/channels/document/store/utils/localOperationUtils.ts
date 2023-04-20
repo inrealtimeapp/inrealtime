@@ -218,7 +218,6 @@ export const applyPatchOperationsToFragment = ({
   const requests: DocumentOperationRequest[] = []
 
   let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
-
   for (const operation of operations) {
     if (operation.op === 'root') {
       if (operations.length > 1) {

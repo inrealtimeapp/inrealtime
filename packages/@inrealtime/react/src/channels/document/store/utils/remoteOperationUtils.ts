@@ -14,8 +14,8 @@ import {
 import { RealtimeStore } from '../types'
 import { fragmentToDocument } from './fragmentUtils'
 import { createImmutableFragment } from './immutableFragment'
-import { createFragmentIdToPath, FragmentIdToPath } from './pathUtils'
 import { minifyOperations } from './minifyOperations'
+import { createFragmentIdToPath, FragmentIdToPath } from './pathUtils'
 
 /**
  * Apply operation responses to specified stores
@@ -41,7 +41,14 @@ export const applyRemoteOperationsToStores = (
     },
   ]
 
-  stores.forEach((store) => store.applyRemoteOperations(newMessages))
+  stores.forEach((store) => {
+    try {
+      store.applyRemoteOperations(newMessages)
+    } catch (error) {
+      console.error(`Error with store ${store.getName()}`, error)
+      throw error
+    }
+  })
 }
 
 /**
