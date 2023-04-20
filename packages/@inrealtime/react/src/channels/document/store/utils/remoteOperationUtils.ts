@@ -155,7 +155,6 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             })
 
             if (!deleteWithFragmentIdResult) {
-              console.warn('Could not delete fragment before replace')
               continue
             }
 
