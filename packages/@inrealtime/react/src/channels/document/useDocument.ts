@@ -19,7 +19,6 @@ import { areStoresEqual } from './store/tests/storeEqual'
 import { DocumentPatch } from './store/types'
 import { useRealtimeStore } from './store/useRealtimeStore'
 import { fragmentToDocument } from './store/utils/fragmentUtils'
-import { ImmutableFragment } from './store/utils/immutableFragment'
 import { minifyOperations } from './store/utils/minifyOperations'
 import { createFragmentIdToPath } from './store/utils/pathUtils'
 import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtils'
@@ -29,6 +28,7 @@ const OpsMessageType = 'ops'
 export enum DocumentStatus {
   Unready = 'Unready',
   Subscribing = 'Subscribing',
+  SyncingLocalChanges = 'SyncingLocalChanges',
   Ready = 'Ready',
 }
 
