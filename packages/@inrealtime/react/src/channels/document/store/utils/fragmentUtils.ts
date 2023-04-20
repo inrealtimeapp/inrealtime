@@ -170,7 +170,7 @@ export const documentToFragment = (document: any, rootFragmentId?: string): Frag
   const rootType = getFragmentType(document)
   const rootFragment: Fragment = {
     id: rootFragmentId ?? uniqueId(),
-    type: rootType,
+    type: rootType as any,
     value: rootType == FragmentTypeMap || rootType == FragmentTypeList ? {} : document,
   }
 
@@ -196,7 +196,7 @@ export const documentToFragment = (document: any, rootFragmentId?: string): Frag
     const fragment: Fragment = {
       id: id,
       parentId: parentFragment.id,
-      type: type,
+      type: type as any,
       value: document,
     }
     if (parentMapKey) {

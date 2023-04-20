@@ -8,6 +8,7 @@ import { RealtimeMessage } from './realtimeMessage'
 export type DocumentOperationResponse =
   | DocumentSetRootResponse
   | DocumentInsertResponse
+  | DocumentReplaceResponse
   | DocumentDeleteResponse
   | DocumentMoveResponse
 
@@ -28,6 +29,12 @@ export type DocumentInsertResponse = {
   parentId: string // The id of the parent the fragment is being inserted in
   parentMapKey?: string
   parentListIndex?: number
+  value: Fragment
+}
+
+export type DocumentReplaceResponse = {
+  op: 'replace' // The message type
+  id: string // The id of the fragment being updated
   value: Fragment
 }
 
@@ -54,6 +61,7 @@ export type DocumentOperationsRequest = {
 export type DocumentOperationRequest =
   | DocumentSetRootRequest
   | DocumentInsertRequest
+  | DocumentReplaceRequest
   | DocumentDeleteRequest
   | DocumentMoveRequest
 
@@ -70,6 +78,12 @@ export type DocumentInsertRequest = {
   value: Fragment
 }
 
+export type DocumentReplaceRequest = {
+  op: 'replace' // The message type
+  id: string // The id of the fragment being updated
+  value: Fragment
+}
+
 export type DocumentDeleteRequest = {
   op: 'delete' // The message type
   id: string // The id of the fragment being updated
@@ -83,7 +97,9 @@ export type DocumentMoveRequest = {
   parentId: string
 }
 
+export const DocumentOperationRoot = 'root'
 export const DocumentOperationInsert = 'insert'
+export const DocumentOperationReplace = 'replace'
 export const DocumentOperationDelete = 'delete'
 export const DocumentOperationMove = 'move'
 

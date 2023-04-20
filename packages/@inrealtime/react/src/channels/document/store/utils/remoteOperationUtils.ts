@@ -147,6 +147,61 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             }
           }
           break
+        case 'replace':
+          {
+            // Replace is a combination of insert and delete
+            const deleteWithFragmentIdResult = immutableFragment.deleteWithFragmentId({
+              fragmentId: operation.id,
+            })
+
+            if (!deleteWithFragmentIdResult) {
+              continue
+            }
+
+            const { removedIndex, parentFragment, parentFragmentPath } = deleteWithFragmentIdResult
+
+            const fragmentToInsert = clone(operation.value)
+            if (parentFragment.type === FragmentTypeList) {
+              // Its very important that we use this index. On remote the removedIndex will be equal to the index of the operation.
+              // Locally it may not be due to moves or inserts it hasn't received yet.
+              fragmentToInsert.parentListIndex = removedIndex as number
+            }
+
+            const insertWithFragmentIdResult = immutableFragment.insertWithFragmentId({
+              insertedFragment: fragmentToInsert,
+              parentFragmentId: fragmentToInsert.parentId!,
+            })
+
+            if (!insertWithFragmentIdResult) {
+              console.warn('Could not insert fragment after replace')
+              continue
+            }
+
+            const { insertedFragment } = insertWithFragmentIdResult
+            const insertedDocument = fragmentToDocument({ fragment: insertedFragment })
+
+            if (insertedFragment.parentListIndex !== fragmentToInsert.parentListIndex) {
+              console.warn('Indexed not equal')
+            }
+
+            const parentDocument = immutableFragment.getSubDocumentFromFragmentPath(
+              draftDocument,
+              parentFragmentPath,
+            )
+
+            // Insert into parent document
+            if (parentFragment.type === FragmentTypeList) {
+              // Add to list
+              const list = parentDocument as any[]
+              const documentIndex = insertedFragment.parentListIndex!
+              list[documentIndex] = insertedDocument
+            } else {
+              // Add to map
+              const index = insertedFragment.parentMapKey!
+              parentDocument[index] = insertedDocument
+            }
+          }
+          break
         case 'delete':
           {
             if (Debug.debugRemoteOperations) {
@@ -238,7 +293,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
   })
 
   return {
-    newDocument,
+    newDocument: newDocument as TRealtimeState,
     newFragment: immutableFragment.getFragment(),
     newFragmentIdToPath: immutableFragment.getFragmentIdToPath(),
   }
