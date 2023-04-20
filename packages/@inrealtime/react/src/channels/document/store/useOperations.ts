@@ -14,9 +14,9 @@ import { DocumentStatus } from '../useDocument'
 import { areStoresEqual } from './tests/storeEqual'
 import { useRealtimeStore } from './useRealtimeStore'
 import { fragmentToDocument } from './utils/fragmentUtils'
+import { minifyOperations } from './utils/minifyOperations'
 import { createFragmentIdToPath } from './utils/pathUtils'
 import { applyRemoteOperationsToStores } from './utils/remoteOperationUtils'
-import { minifyOperations } from './utils/minifyOperations'
 
 const OpsMessageType = 'ops'
 
@@ -99,9 +99,11 @@ export const useOperations = <TRealtimeState>({
   const localStore = useRealtimeStore<TRealtimeState>({
     onPatchOperations: onLocalPatchOperations,
     devtools: config.developerSettings.devtools ? { name: 'Local store' } : undefined,
+    name: 'local',
   })
   const remoteStore = useRealtimeStore<TRealtimeState>({
     devtools: config.developerSettings.devtools ? { name: 'Remote store' } : undefined,
+    name: 'remote',
   })
 
   // Reset

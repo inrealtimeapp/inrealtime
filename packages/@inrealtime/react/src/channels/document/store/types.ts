@@ -30,6 +30,7 @@ export type Subscribe<TRealtimeState> = <TRealtimeSubState>(
 export type DocumentPatch<TRealtimeState> = (root: TRealtimeState) => TRealtimeState | void
 
 export type RealtimeStore<TRealtimeState> = {
+  getName(): string
   getRoot(): { document: TRealtimeState; fragment: Fragment; fragmentIdToPath: FragmentIdToPath }
   setRoot({}: {
     document: TRealtimeState | undefined
