@@ -9,9 +9,6 @@ import {
 export const minifyOperations = (
   operations: (DocumentOperationRequest | DocumentOperationResponse)[],
 ) => {
-  if (true) {
-    return operations
-  }
   // Minify to only required operations
   let minifiedOperations: (DocumentOperationRequest | DocumentOperationResponse)[] = []
   for (const operation of operations) {

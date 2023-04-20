@@ -119,6 +119,7 @@ export const useRealtimeStore = <TRealtimeState>({
             fragment: oldFragment,
             fragmentIdToPath: oldFragmentIdToPath,
             messages,
+            storeName: name,
           })
 
           set({
