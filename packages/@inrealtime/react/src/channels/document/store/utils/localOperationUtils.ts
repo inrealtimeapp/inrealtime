@@ -41,40 +41,39 @@ const _getListOperations = (
   const operations: ImmerOperation[] = []
   let i = 0
   let j = 0
-  const deletedOperations: { [index: number]: ImmerOperation } = {}
-  const replaceOperations: ImmerOperation[] = []
+  let previousDeletedOperation: ImmerOperation | undefined = undefined
   while (i < oldList.length && j < newList.length) {
     if (oldList[i] === newList[j]) {
       i++
       j++
+
+      previousDeletedOperation = undefined
     } else if (newList.indexOf(oldList[i]) === -1) {
       const deleteOp: ImmerOperation = { op: 'delete', path, index: i }
+      previousDeletedOperation = deleteOp
+
       operations.push(deleteOp)
       oldList.splice(i, 1)
-
-      deletedOperations[i] = deleteOp
     } else if (oldList.indexOf(newList[j]) === -1) {
       // If a delete operation was added for the same index we can combine them into a replace operation
-      if (deletedOperations[i]) {
-        // Remove delete operation
-        const deletedOpr = operations.splice(-1)[0]
-        if (deletedOpr !== deletedOperations[i]) {
-          throw new Error('Deleted operation is not the last operation')
-        }
-        delete deletedOperations[i]
-
-        const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
-        operations.push(replaceOp)
-        replaceOperations.push(replaceOp)
-      } else {
-        const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
-        operations.push(insertOp)
-      }
+      // if (previousDeletedOperation && previousDeletedOperation.index === i) {
+      //   // Remove delete operation
+      //   const deletedOpr = operations.splice(-1)[0]
+      //   if (deletedOpr !== previousDeletedOperation) {
+      //     throw new Error('Deleted operation is not the last operation')
+      //   }
+      //   const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
+      //   operations.push(replaceOp)
+      // } else {
+      const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
+      operations.push(insertOp)
+      // }
 
       oldList.splice(i, 0, newList[j])
 
       i++
       j++
+      previousDeletedOperation = undefined
     } else {
       const k = oldList.indexOf(newList[j], i)
       operations.push({ op: 'move', path, oldIndex: k < 0 ? oldList.length - 1 : k, newIndex: i })
@@ -83,14 +82,31 @@ const _getListOperations = (
         oldList[l] = oldList[l - 1]
       }
       oldList[i] = temp
+
+      previousDeletedOperation = undefined
     }
   }
   while (i < oldList.length) {
-    operations.push({ op: 'delete', path, index: i })
+    const deleteOp: ImmerOperation = { op: 'delete', path, index: i }
+    previousDeletedOperation = deleteOp
     oldList.splice(i, 1)
   }
+
   while (j < newList.length) {
-    operations.push({ op: 'insert', path, index: i++, value: newList[j++] })
+    // if (previousDeletedOperation && previousDeletedOperation.index === i) {
+    //   // Remove delete operation
+    //   const deletedOpr = operations.splice(-1)[0]
+    //   if (deletedOpr !== previousDeletedOperation) {
+    //     throw new Error('Deleted operation is not the last operation')
+    //   }
+    //   const replaceOp: ImmerOperation = { op: 'replace', path, index: i++, value: newList[j++] }
+    //   operations.push(replaceOp)
+    // } else {
+    const insertOp: ImmerOperation = { op: 'insert', path, index: i++, value: newList[j++] }
+    operations.push(insertOp)
+    //}
+
+    previousDeletedOperation = undefined
   }
 
   // Remove operations that haven't been applied by immer
@@ -269,6 +285,29 @@ export const applyPatchOperationsToFragment = ({
         }
         break
       case 'replace':
+        // {
+        //   // Replace is a combination of delete and insert, except that we inject the old fragment id in the insert request
+        //
+        //   // Delete
+        //   const immerPath: ImmerPath = [...operation.path, operation.index]
+        //   const { removedFragment } = immutableFragment.deleteAtImmerPath({
+        //     immerPath,
+        //   })
+        //
+        //   // Insert
+        //   const { insertedFragment } = immutableFragment.insertAtImmerPath({
+        //     insertedFragment: documentToFragment(operation.value, removedFragment.id),
+        //     parentImmerPath: operation.path,
+        //     index: operation.index,
+        //   })
+        //
+        //   // Insert requests
+        //   requests.push({
+        //     op: 'replace',
+        //     id: insertedFragment.id,
+        //     value: clone(insertedFragment),
+        //   })
+        // }
         {
           // Replace is a combination of delete and insert, except that we inject the old fragment id in the insert request
 
@@ -301,6 +340,7 @@ export const applyPatchOperationsToFragment = ({
             value: clone(insertedFragment),
           })
         }
+
         break
       case 'move':
         {

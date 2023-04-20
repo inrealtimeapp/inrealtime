@@ -189,6 +189,18 @@ export const resolveConflictsInStore = <TRealtimeState>({
               replaceMap = true
               break
             }
+            if (truthSubFragment.type !== subFragment.type) {
+              replaceMap = true
+              break
+            }
+            if (
+              truthSubFragment.type !== FragmentTypeMap &&
+              truthSubFragment.type !== FragmentTypeList &&
+              truthSubFragment.value !== subFragment.value
+            ) {
+              replaceMap = true
+              break
+            }
           }
         }
 
@@ -288,7 +300,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
   })
 
   return {
-    newDocument,
+    newDocument: newDocument as TRealtimeState,
     newFragment: immutableFragment.getFragment(),
     newFragmentIdToPath: immutableFragment.getFragmentIdToPath(),
   }

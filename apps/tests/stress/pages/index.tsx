@@ -21,6 +21,9 @@ export default function Home() {
     publicAuthKey: process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY,
     _package: {
       environment: process.env.NEXT_PUBLIC_REALTIME_DEVELOPMENT_ENVIRONMENT as any,
+      debug: {
+        conflicts: true,
+      },
     },
   })
 
@@ -31,6 +34,11 @@ export default function Home() {
 
     patch((root) => {
       if (!root.nodes || root.nodes.length > 35) {
+        console.log(
+          'Resetting nodes',
+          root.nodes ? root.nodes.length : "doesn't exist",
+          root.nodes ? JSON.parse(JSON.stringify(root.nodes)) : '',
+        )
         root.nodes = [
           {
             n: `node-${randomIntFromInterval(0, 300)}`,
@@ -45,7 +53,7 @@ export default function Home() {
 
       const getRandomIndex = () => randomIntFromInterval(0, root.nodes.length - 1)
 
-      const ids = [0, 1, 2, 3, 4]
+      const ids = [0, 1, 2, 3] // [0, 1, 2, 3, 4]
       const ranIndex = randomIntFromInterval(0, ids.length - 1)
       const ran: number = ids[ranIndex]
       switch (ran) {
@@ -137,9 +145,9 @@ export default function Home() {
 
   const nodes = useStore((root) => {
     return root?.nodes?.map((n) => ({
-      n: n.n,
-      x: n.position.x,
-      y: n.position.y,
+      n: n?.n,
+      x: n?.position.x,
+      y: n?.position.y,
     }))
   }, shallow)
 

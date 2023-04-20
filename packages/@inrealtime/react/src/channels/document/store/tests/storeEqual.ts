@@ -29,6 +29,14 @@ const getFormattedObj = (d: any) => {
 export const areStoresEqual = <TRealtimeState>(
   d1: { document: TRealtimeState; fragment: Fragment; fragmentIdToPath: FragmentIdToPath },
   d2: { document: TRealtimeState; fragment: Fragment; fragmentIdToPath: FragmentIdToPath },
-) => {
-  return JSON.stringify(getFormattedObj(d1)) === JSON.stringify(getFormattedObj(d2))
+): { documentsEqual: boolean; fragmentsEqual: boolean; fragmentIdToPathsEqual: boolean } => {
+  return {
+    documentsEqual:
+      JSON.stringify(getFormattedObj(d1.document)) === JSON.stringify(getFormattedObj(d2.document)),
+    fragmentsEqual:
+      JSON.stringify(getFormattedObj(d1.fragment)) === JSON.stringify(getFormattedObj(d2.fragment)),
+    fragmentIdToPathsEqual:
+      JSON.stringify(getFormattedObj(d1.fragmentIdToPath)) ===
+      JSON.stringify(getFormattedObj(d2.fragmentIdToPath)),
+  }
 }

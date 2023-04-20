@@ -14,8 +14,8 @@ import {
 import { RealtimeStore } from '../types'
 import { fragmentToDocument } from './fragmentUtils'
 import { createImmutableFragment } from './immutableFragment'
-import { createFragmentIdToPath, FragmentIdToPath } from './pathUtils'
 import { minifyOperations } from './minifyOperations'
+import { createFragmentIdToPath, FragmentIdToPath } from './pathUtils'
 
 /**
  * Apply operation responses to specified stores
@@ -121,6 +121,62 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             }
           }
           break
+        case 'replace':
+          {
+            // Replace is a combination of insert and delete
+            const deleteWithFragmentIdResult = immutableFragment.deleteWithFragmentId({
+              fragmentId: operation.id,
+            })
+
+            if (!deleteWithFragmentIdResult) {
+              console.warn('Could not delete fragment before replace')
+              continue
+            }
+
+            const { removedIndex, parentFragment, parentFragmentPath } = deleteWithFragmentIdResult
+
+            const fragmentToInsert = clone(operation.value)
+            if (parentFragment.type === FragmentTypeList) {
+              // Its very important that we use this index. On remote the removedIndex will be equal to the index of the operation.
+              // Locally it may not be due to moves or inserts it hasn't received yet.
+              fragmentToInsert.parentListIndex = removedIndex as number
+            }
+
+            const insertWithFragmentIdResult = immutableFragment.insertWithFragmentId({
+              insertedFragment: fragmentToInsert,
+              parentFragmentId: fragmentToInsert.parentId!,
+            })
+
+            if (!insertWithFragmentIdResult) {
+              console.warn('Could not insert fragment after replace')
+              continue
+            }
+
+            const { insertedFragment } = insertWithFragmentIdResult
+            const insertedDocument = fragmentToDocument({ fragment: insertedFragment })
+
+            if (insertedFragment.parentListIndex !== fragmentToInsert.parentListIndex) {
+              console.warn('Indexed not equal')
+            }
+
+            const parentDocument = immutableFragment.getSubDocumentFromFragmentPath(
+              draftDocument,
+              parentFragmentPath,
+            )
+
+            // Insert into parent document
+            if (parentFragment.type === FragmentTypeList) {
+              // Add to list
+              const list = parentDocument as any[]
+              const documentIndex = insertedFragment.parentListIndex!
+              list[documentIndex] = insertedDocument
+            } else {
+              // Add to map
+              const index = insertedFragment.parentMapKey!
+              parentDocument[index] = insertedDocument
+            }
+          }
+          break
         case 'delete':
           {
             const deleteWithFragmentIdResult = immutableFragment.deleteWithFragmentId({
@@ -144,6 +200,10 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
               const list = parentDocument as any[]
               list.splice(removedIndex as number, 1)
             } else {
+              if (!parentDocument) {
+                console.log(parentDocument, parentFragment)
+              }
+
               // Remove from map
               delete parentDocument[removedIndex]
             }
@@ -179,7 +239,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
   })
 
   return {
-    newDocument,
+    newDocument: newDocument as TRealtimeState,
     newFragment: immutableFragment.getFragment(),
     newFragmentIdToPath: immutableFragment.getFragmentIdToPath(),
   }

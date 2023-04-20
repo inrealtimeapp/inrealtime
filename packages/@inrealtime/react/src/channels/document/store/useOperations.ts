@@ -14,9 +14,9 @@ import { DocumentStatus } from '../useDocument'
 import { areStoresEqual } from './tests/storeEqual'
 import { useRealtimeStore } from './useRealtimeStore'
 import { fragmentToDocument } from './utils/fragmentUtils'
+import { minifyOperations } from './utils/minifyOperations'
 import { createFragmentIdToPath } from './utils/pathUtils'
 import { applyRemoteOperationsToStores } from './utils/remoteOperationUtils'
-import { minifyOperations } from './utils/minifyOperations'
 
 const OpsMessageType = 'ops'
 
@@ -76,6 +76,12 @@ export const useOperations = <TRealtimeState>({
           case 'insert':
             // We need to check the parent for any index or map changes
             conflicts.push(op.parentId!)
+            break
+          case 'replace':
+            // We need to check the current item and parent for any index or map changes
+            // Order is important!
+            conflicts.push(op.value.parentId!)
+            conflicts.push(op.value.id!)
             break
           case 'move':
             // We only need to check parent for index integrity
@@ -156,6 +162,8 @@ export const useOperations = <TRealtimeState>({
         if (operation.op === 'insert' && opMetadata.parentListIndex !== undefined) {
           operation.parentListIndex = opMetadata.parentListIndex
           operation.value.parentListIndex = opMetadata.parentListIndex
+        } else if (operation.op === 'replace' && opMetadata.parentListIndex !== undefined) {
+          operation.value.parentListIndex = opMetadata.parentListIndex
         } else if (operation.op === 'move' && opMetadata.index !== undefined) {
           operation.index = opMetadata.index
         }
@@ -199,12 +207,37 @@ export const useOperations = <TRealtimeState>({
             },
           )
 
-          if (!storesEqual) {
+          if (
+            !storesEqual.documentsEqual ||
+            !storesEqual.fragmentsEqual ||
+            !storesEqual.fragmentIdToPathsEqual
+          ) {
             console.warn(
               'Conflicts not resolved. Remote and local are NOT equal!',
               'Previous request -> ',
               request,
             )
+            if (!storesEqual.documentsEqual) {
+              console.warn(
+                'Documents not equal',
+                JSON.parse(JSON.stringify(local.document)),
+                JSON.parse(JSON.stringify(remote.document)),
+              )
+            }
+            if (!storesEqual.fragmentsEqual) {
+              console.warn(
+                'Fragments not equal',
+                JSON.parse(JSON.stringify(local.fragment)),
+                JSON.parse(JSON.stringify(remote.fragment)),
+              )
+            }
+            if (!storesEqual.fragmentIdToPathsEqual) {
+              console.warn(
+                'Fragment id to paths not equal',
+                JSON.parse(JSON.stringify(local.fragmentIdToPath)),
+                JSON.parse(JSON.stringify(remote.fragmentIdToPath)),
+              )
+            }
           } else {
             console.log('Conflicts resolved, remote and local are equal.')
           }
