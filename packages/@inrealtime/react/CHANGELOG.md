@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.6
+
+### Patch Changes
+
+- Added replace operation. Fixes to some fragments updates
+
 ## 0.1.5
 
 ### Patch Changes
