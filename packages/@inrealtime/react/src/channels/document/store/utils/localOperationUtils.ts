@@ -57,23 +57,24 @@ const _getListOperations = (
       oldList.splice(i, 1)
     } else if (oldList.indexOf(newList[j]) === -1) {
       // If a delete operation was added for the same index we can combine them into a replace operation
-      // if (previousDeletedOperation && previousDeletedOperation.index === i) {
-      //   // Remove delete operation
-      //   const deletedOpr = operations.splice(-1)[0]
-      //   if (deletedOpr !== previousDeletedOperation) {
-      //     throw new Error('Deleted operation is not the last operation')
-      //   }
-      //   const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
-      //   operations.push(replaceOp)
-      // } else {
-      const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
-      operations.push(insertOp)
-      // }
+      if (previousDeletedOperation && previousDeletedOperation.index === i) {
+        // Remove delete operation
+        const deletedOpr = operations.splice(-1)[0]
+        if (deletedOpr !== previousDeletedOperation) {
+          throw new Error('Deleted operation is not the last operation')
+        }
+        const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
+        operations.push(replaceOp)
+      } else {
+        const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
+        operations.push(insertOp)
+      }
 
       oldList.splice(i, 0, newList[j])
 
       i++
       j++
+
       previousDeletedOperation = undefined
     } else {
       const k = oldList.indexOf(newList[j], i)
@@ -94,18 +95,18 @@ const _getListOperations = (
   }
 
   while (j < newList.length) {
-    // if (previousDeletedOperation && previousDeletedOperation.index === i) {
-    //   // Remove delete operation
-    //   const deletedOpr = operations.splice(-1)[0]
-    //   if (deletedOpr !== previousDeletedOperation) {
-    //     throw new Error('Deleted operation is not the last operation')
-    //   }
-    //   const replaceOp: ImmerOperation = { op: 'replace', path, index: i++, value: newList[j++] }
-    //   operations.push(replaceOp)
-    // } else {
-    const insertOp: ImmerOperation = { op: 'insert', path, index: i++, value: newList[j++] }
-    operations.push(insertOp)
-    //}
+    if (previousDeletedOperation && previousDeletedOperation.index === i) {
+      // Remove delete operation
+      const deletedOpr = operations.splice(-1)[0]
+      if (deletedOpr !== previousDeletedOperation) {
+        throw new Error('Deleted operation is not the last operation')
+      }
+      const replaceOp: ImmerOperation = { op: 'replace', path, index: i++, value: newList[j++] }
+      operations.push(replaceOp)
+    } else {
+      const insertOp: ImmerOperation = { op: 'insert', path, index: i++, value: newList[j++] }
+      operations.push(insertOp)
+    }
 
     previousDeletedOperation = undefined
   }

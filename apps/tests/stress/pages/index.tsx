@@ -48,7 +48,7 @@ export default function Home() {
 
       const getRandomIndex = () => randomIntFromInterval(0, root.nodes.length - 1)
 
-      const ids = [0, 1, 2, 3] // [0, 1, 2, 3, 4]
+      const ids = [0, 1, 2, 3, 4]
       const ranIndex = randomIntFromInterval(0, ids.length - 1)
       const ran: number = ids[ranIndex]
       switch (ran) {
@@ -140,16 +140,14 @@ export default function Home() {
 
   const nodes = useStore((root) => {
     return root?.nodes?.map((n) => ({
-      n: n?.n,
-      x: n?.position.x,
-      y: n?.position.y,
+      n: n.n,
+      x: n.position.x,
+      y: n.position.y,
     }))
   }, shallow)
 
   const me = useMe()
   const collaborators = useCollaborators()
-
-  //const nodes = useStore((root: ProjectResponse) => root?.nodes)
 
   return (
     <div>

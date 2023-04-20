@@ -237,10 +237,6 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
               const list = parentDocument as any[]
               list.splice(removedIndex as number, 1)
             } else {
-              if (!parentDocument) {
-                console.log(parentDocument, parentFragment)
-              }
-
               // Remove from map
               delete parentDocument[removedIndex]
             }
