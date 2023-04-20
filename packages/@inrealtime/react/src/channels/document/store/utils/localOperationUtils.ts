@@ -91,6 +91,8 @@ const _getListOperations = (
   while (i < oldList.length) {
     const deleteOp: ImmerOperation = { op: 'delete', path, index: i }
     previousDeletedOperation = deleteOp
+
+    operations.push(deleteOp)
     oldList.splice(i, 1)
   }
 
