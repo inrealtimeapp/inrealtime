@@ -1,5 +1,6 @@
 import { produce } from 'immer'
 
+import { RealtimeConfig } from '../../../../config'
 import {
   Fragment,
   FragmentMap,
@@ -97,6 +98,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
   conflictFragmentIds,
   conflictStore,
   truthStore,
+  config,
 }: {
   conflictFragmentIds: string[]
   conflictStore: {
@@ -109,6 +111,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
     fragment: Fragment
     fragmentIdToPath: FragmentIdToPath
   }
+  config: RealtimeConfig
 }): {
   newDocument: TRealtimeState
   newFragment: Fragment
@@ -120,6 +123,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
   const immutableFragment = createImmutableFragment(
     conflictStore.fragment,
     conflictStore.fragmentIdToPath,
+    config,
   )
 
   const newDocument = produce(conflictStore.document, (draftDocument) => {

@@ -99,7 +99,7 @@ export const useAuth = ({
         authData.tokenExpiryTime! - Date.now() / 1000 - ReAuthenticationTimeBeforeTokenExpiry / 1000
       if (diff < 0) {
         setStatus(AuthenticationStatus.Authenticating)
-        console.log("Auth status' -> Authenticating")
+        if (config.logging.socketStatus) console.log("Auth status' -> Authenticating")
       }
     }, 5000)
     return () => {
@@ -143,13 +143,13 @@ export const useAuth = ({
       .then(({ socketUrl, token, tokenExpiryTime, projectId }) => {
         setAuthData({ socketUrl, token, tokenExpiryTime, projectId, documentId })
         setStatus(AuthenticationStatus.Authenticated)
-        console.log('Auth status -> Authenticated')
+        if (config.logging.socketStatus) console.log('Auth status -> Authenticated')
       })
       .catch((e) => {
         console.error(e)
 
         setStatus(AuthenticationStatus.Error)
-        console.log("Auth status' -> Error")
+        if (config.logging.socketStatus) console.log("Auth status' -> Error")
 
         // Max wait is AuthenticationErrorExponentialTimerMax, start at AuthenticationErrorExponentialTimerStart ms, double each auth
         const newExponentialTimer = Math.min(

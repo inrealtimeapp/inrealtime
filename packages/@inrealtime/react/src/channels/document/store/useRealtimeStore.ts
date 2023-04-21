@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
+import { RealtimeConfig } from '../../../config'
 import {
   DocumentOperationRequest,
   DocumentOperationsRequest,
@@ -41,9 +42,11 @@ type useStoreWithPatch<TRealtimeState> = {
 
 export const useRealtimeStore = <TRealtimeState>({
   onPatchOperations,
+  config,
   name,
 }: {
   onPatchOperations?: (requests: DocumentOperationRequest[]) => void
+  config: RealtimeConfig
   name: string
 }): RealtimeStore<TRealtimeState> => {
   const onPatchOperationsRef = useRef<(requests: DocumentOperationRequest[]) => void | undefined>()
@@ -87,12 +90,12 @@ export const useRealtimeStore = <TRealtimeState>({
             oldDocument,
             newDocument,
           })
-          console.log('patches', patches)
 
           const { newFragment, newFragmentIdToPath, requests } = applyPatchOperationsToFragment({
             fragment: oldFragment,
             fragmentIdToPath: oldFragmentIdToPath,
             operations,
+            config,
           })
 
           set({
@@ -118,6 +121,7 @@ export const useRealtimeStore = <TRealtimeState>({
             fragmentIdToPath: oldFragmentIdToPath,
             messages,
             storeName: name,
+            config,
           })
 
           set({
@@ -143,6 +147,7 @@ export const useRealtimeStore = <TRealtimeState>({
               fragmentIdToPath: oldFragmentIdToPath,
             },
             truthStore: truthStoreRoot,
+            config,
           })
 
           set({

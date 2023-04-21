@@ -1,5 +1,6 @@
 import { Patch } from 'immer'
 
+import { RealtimeConfig } from '../../../../config'
 import {
   clone,
   DocumentOperationRequest,
@@ -8,7 +9,6 @@ import {
   listsShallowEqual,
 } from '../../../../core'
 import { ImmerOperation } from '../types'
-import { Debug } from './debug'
 import { documentToFragment } from './fragmentUtils'
 import { createImmutableFragment } from './immutableFragment'
 import { createFragmentIdToPath, FragmentIdToPath, ImmerPath } from './pathUtils'
@@ -122,10 +122,7 @@ const _getListOperations = (
     }
 
     const listPatch = listPatches.find(
-      (op) =>
-        (op.op === 'replace' || op.op === 'add' || op.op === 'remove') &&
-        op.path.length > 0 &&
-        op.path[op.path.length - 1] === operation.index,
+      (op) => op.path.length > 0 && op.path[op.path.length - 1] === operation.index,
     )
     if (!listPatch) {
       continue
@@ -226,10 +223,12 @@ export const applyPatchOperationsToFragment = ({
   fragment,
   fragmentIdToPath,
   operations,
+  config,
 }: {
   fragment: Fragment
   fragmentIdToPath: FragmentIdToPath
   operations: ImmerOperation[]
+  config: RealtimeConfig
 }): {
   newFragment: Fragment
   newFragmentIdToPath: FragmentIdToPath
@@ -237,7 +236,7 @@ export const applyPatchOperationsToFragment = ({
 } => {
   const requests: DocumentOperationRequest[] = []
 
-  let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
+  let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath, config)
   for (const operation of operations) {
     if (operation.op === 'root') {
       if (operations.length > 1) {
@@ -256,7 +255,7 @@ export const applyPatchOperationsToFragment = ({
     switch (operation.op) {
       case 'insert':
         {
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(`[Local operation] Inserting fragment`, operation.path, operation.index)
           }
 
@@ -266,7 +265,7 @@ export const applyPatchOperationsToFragment = ({
             index: operation.index,
           })
 
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(`[Local operation] Inserted successfully fragment ${insertedFragment.id}`)
           }
 
@@ -282,14 +281,16 @@ export const applyPatchOperationsToFragment = ({
         break
       case 'delete':
         {
-          const immerPath: ImmerPath = [...operation.path, operation.index]
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(`[Local operation] Removing fragment`, operation.path, operation.index)
           }
+
+          const immerPath: ImmerPath = [...operation.path, operation.index]
           const { removedFragment } = immutableFragment.deleteAtImmerPath({
             immerPath,
           })
-          if (Debug.debugLocalOperations) {
+
+          if (config.logging.localOperations) {
             console.log(`[Local operation] Removed fragment successfully ${removedFragment.id}`)
           }
 
@@ -304,7 +305,7 @@ export const applyPatchOperationsToFragment = ({
       case 'replace':
         {
           // Replace is a combination of delete and insert, except that we inject the old fragment id in the insert request
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(
               '[Local operation start] Replacing fragment',
               operation.path,
@@ -318,7 +319,7 @@ export const applyPatchOperationsToFragment = ({
             immerPath,
           })
 
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(
               `[Local operation] Removed fragment ${removedFragment.id} ${removedFragment.parentListIndex} (replace)`,
             )
@@ -331,7 +332,7 @@ export const applyPatchOperationsToFragment = ({
             index: operation.index,
           })
 
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(
               `[Local operation] Inserted fragment ${insertedFragment.id} (replace) - finished`,
             )
@@ -347,9 +348,9 @@ export const applyPatchOperationsToFragment = ({
         break
       case 'move':
         {
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(
-              `[Local operation] Moving fragment `,
+              `[Local operation] Moving fragment`,
               operation.path,
               operation.oldIndex,
               operation.newIndex,
@@ -362,7 +363,7 @@ export const applyPatchOperationsToFragment = ({
             toIndex: operation.newIndex,
           })
 
-          if (Debug.debugLocalOperations) {
+          if (config.logging.localOperations) {
             console.log(`[Local operation] Moved fragment successfully `, movedFragment.id)
           }
           // Insert requests

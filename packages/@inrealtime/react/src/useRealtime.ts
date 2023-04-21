@@ -22,8 +22,12 @@ export type UseRealtimeOptions = {
   throttle?: number
   _package?: {
     environment?: 'local' | 'development' | 'production'
-    debug?: {
+    logging: {
       conflicts?: boolean
+      socketStatus?: boolean
+      listFragmentIndexes?: boolean
+      localOperations?: boolean
+      remoteOperations?: boolean
     }
   }
 }
@@ -70,7 +74,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
     () =>
       getRealtimeConfig({
         environment: _package?.environment,
-        debug: _package?.debug,
+        logging: _package?.logging,
         autosave,
       }),
     [],
@@ -91,7 +95,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
     status: webSocketStatus,
     statusRef: webSocketStatusRef,
     useChannel,
-  } = useWebSocket({ socketUrl, token })
+  } = useWebSocket({ socketUrl, token, config })
 
   throttle = getThrottle(throttle)
 

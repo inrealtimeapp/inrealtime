@@ -16,19 +16,29 @@ export type RealtimeConfig = {
   environment: 'local' | 'development' | 'production'
   authUrl: string
   webSocketUrl: string
-  debug: {
+  logging: {
     conflicts: boolean
+    socketStatus: boolean
+    listFragmentIndexes: boolean
+    localOperations: boolean
+    remoteOperations: boolean
   }
   autosave: boolean
 }
 
 export const getRealtimeConfig = ({
   environment,
-  debug,
+  logging,
   autosave,
 }: {
   environment?: 'local' | 'development' | 'production'
-  debug?: { conflicts?: boolean }
+  logging?: {
+    conflicts?: boolean
+    socketStatus?: boolean
+    listFragmentIndexes?: boolean
+    localOperations?: boolean
+    remoteOperations?: boolean
+  }
   autosave?: boolean
 }): RealtimeConfig => {
   if (!environment || !allowedEnvironments.includes(environment)) {
@@ -41,8 +51,12 @@ export const getRealtimeConfig = ({
     environment,
     authUrl,
     webSocketUrl,
-    debug: {
-      conflicts: debug?.conflicts ?? false,
+    logging: {
+      conflicts: logging?.conflicts ?? false,
+      socketStatus: logging?.socketStatus ?? false,
+      listFragmentIndexes: logging?.listFragmentIndexes ?? false,
+      localOperations: logging?.localOperations ?? false,
+      remoteOperations: logging?.remoteOperations ?? false,
     },
     autosave: !!autosave,
   }

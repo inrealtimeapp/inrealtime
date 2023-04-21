@@ -28,7 +28,6 @@ const OpsMessageType = 'ops'
 export enum DocumentStatus {
   Unready = 'Unready',
   Subscribing = 'Subscribing',
-  SyncingLocalChanges = 'SyncingLocalChanges',
   Ready = 'Ready',
 }
 
@@ -138,9 +137,11 @@ export const useDocumentChannel = <TRealtimeState>({
   const localStore = useRealtimeStore<TRealtimeState>({
     onPatchOperations: onLocalPatchOperations,
     name: 'local',
+    config,
   })
   const remoteStore = useRealtimeStore<TRealtimeState>({
     name: 'local',
+    config,
   })
 
   // Create autosave
@@ -283,14 +284,14 @@ export const useDocumentChannel = <TRealtimeState>({
     // If all messages have been acked resolve conflicts
     // This is done because we don't overwrite local content whilst the user is in the process of updating
     if (unackedOperationsRef.current.length === 0) {
-      if (config.debug.conflicts) {
+      if (config.logging.conflicts) {
         console.log('Resolving conflicts')
       }
 
       localStore.resolveConflicts(conflictsIdsRef.current, remoteStore)
       conflictsIdsRef.current = []
 
-      if (config.debug.conflicts) {
+      if (config.logging.conflicts) {
         const local = localStore.getRoot()
         const remote = remoteStore.getRoot()
         const storesEqual = areStoresEqual(
