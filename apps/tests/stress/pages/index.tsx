@@ -21,6 +21,9 @@ export default function Home() {
     publicAuthKey: process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY,
     _package: {
       environment: process.env.NEXT_PUBLIC_REALTIME_DEVELOPMENT_ENVIRONMENT as any,
+      debug: {
+        conflicts: true,
+      },
     },
     throttle: 16,
   })
@@ -46,7 +49,7 @@ export default function Home() {
 
       const getRandomIndex = () => randomIntFromInterval(0, root.nodes.length - 1)
 
-      const ids = [0, 1, 2, 3, 4]
+      const ids = [0, 1, 2, 3, 4, 5]
       const ranIndex = randomIntFromInterval(0, ids.length - 1)
       const ran: number = ids[ranIndex]
       switch (ran) {
@@ -117,6 +120,19 @@ export default function Home() {
             } as any
           }
           break
+        case 5:
+          {
+            // Replace a random node's x and y
+            if (root.nodes.length <= 0) {
+              return
+            }
+            const index = getRandomIndex()
+
+            // Set random node's position
+            root.nodes[index].position.x = randomIntFromInterval(50, 200)
+            root.nodes[index].position.y = randomIntFromInterval(50, 200)
+          }
+          break
       }
     })
   }, [])
@@ -125,7 +141,7 @@ export default function Home() {
   useEffect(() => {
     randomInterval.current = setInterval(() => {
       doRandom()
-    }, 30)
+    }, 15)
 
     return () => {
       clearInterval(randomInterval.current!)
@@ -146,8 +162,6 @@ export default function Home() {
 
   const me = useMe()
   const collaborators = useCollaborators()
-
-  //const nodes = useStore((root: ProjectResponse) => root?.nodes)
 
   return (
     <div>

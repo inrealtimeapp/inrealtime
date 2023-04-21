@@ -1,5 +1,5 @@
 import { enablePatches, freeze, produceWithPatches } from 'immer'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
@@ -41,8 +41,10 @@ type useStoreWithPatch<TRealtimeState> = {
 
 export const useRealtimeStore = <TRealtimeState>({
   onPatchOperations,
+  name,
 }: {
   onPatchOperations?: (requests: DocumentOperationRequest[]) => void
+  name: string
 }): RealtimeStore<TRealtimeState> => {
   const onPatchOperationsRef = useRef<(requests: DocumentOperationRequest[]) => void | undefined>()
   useEffect(() => {
@@ -115,6 +117,7 @@ export const useRealtimeStore = <TRealtimeState>({
             fragment: oldFragment,
             fragmentIdToPath: oldFragmentIdToPath,
             messages,
+            storeName: name,
           })
 
           set({
@@ -151,6 +154,8 @@ export const useRealtimeStore = <TRealtimeState>({
       })),
     ),
   )
+
+  const getName = useCallback(() => name, [])
 
   // Get getRoot function
   const getRoot = useMemo(() => {
@@ -226,6 +231,7 @@ export const useRealtimeStore = <TRealtimeState>({
   }, [])
 
   return {
+    getName,
     getRoot,
     setRoot,
     useStore,

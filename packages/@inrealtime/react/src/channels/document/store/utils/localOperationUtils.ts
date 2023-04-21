@@ -8,6 +8,7 @@ import {
   listsShallowEqual,
 } from '../../../../core'
 import { ImmerOperation } from '../types'
+import { Debug } from './debug'
 import { documentToFragment } from './fragmentUtils'
 import { createImmutableFragment } from './immutableFragment'
 import { createFragmentIdToPath, FragmentIdToPath, ImmerPath } from './pathUtils'
@@ -41,31 +42,29 @@ const _getListOperations = (
   const operations: ImmerOperation[] = []
   let i = 0
   let j = 0
-  const deletedOperations: { [index: number]: ImmerOperation } = {}
-  const replaceOperations: ImmerOperation[] = []
+  let previousDeletedOperation: ImmerOperation | undefined = undefined
   while (i < oldList.length && j < newList.length) {
     if (oldList[i] === newList[j]) {
       i++
       j++
+
+      previousDeletedOperation = undefined
     } else if (newList.indexOf(oldList[i]) === -1) {
       const deleteOp: ImmerOperation = { op: 'delete', path, index: i }
+      previousDeletedOperation = deleteOp
+
       operations.push(deleteOp)
       oldList.splice(i, 1)
-
-      deletedOperations[i] = deleteOp
     } else if (oldList.indexOf(newList[j]) === -1) {
       // If a delete operation was added for the same index we can combine them into a replace operation
-      if (deletedOperations[i]) {
+      if (previousDeletedOperation && previousDeletedOperation.index === i) {
         // Remove delete operation
         const deletedOpr = operations.splice(-1)[0]
-        if (deletedOpr !== deletedOperations[i]) {
+        if (deletedOpr !== previousDeletedOperation) {
           throw new Error('Deleted operation is not the last operation')
         }
-        delete deletedOperations[i]
-
         const replaceOp: ImmerOperation = { op: 'replace', path, index: i, value: newList[j] }
         operations.push(replaceOp)
-        replaceOperations.push(replaceOp)
       } else {
         const insertOp: ImmerOperation = { op: 'insert', path, index: i, value: newList[j] }
         operations.push(insertOp)
@@ -75,6 +74,8 @@ const _getListOperations = (
 
       i++
       j++
+
+      previousDeletedOperation = undefined
     } else {
       const k = oldList.indexOf(newList[j], i)
       operations.push({ op: 'move', path, oldIndex: k < 0 ? oldList.length - 1 : k, newIndex: i })
@@ -83,14 +84,33 @@ const _getListOperations = (
         oldList[l] = oldList[l - 1]
       }
       oldList[i] = temp
+
+      previousDeletedOperation = undefined
     }
   }
   while (i < oldList.length) {
-    operations.push({ op: 'delete', path, index: i })
+    const deleteOp: ImmerOperation = { op: 'delete', path, index: i }
+    previousDeletedOperation = deleteOp
+
+    operations.push(deleteOp)
     oldList.splice(i, 1)
   }
+
   while (j < newList.length) {
-    operations.push({ op: 'insert', path, index: i++, value: newList[j++] })
+    if (previousDeletedOperation && previousDeletedOperation.index === i) {
+      // Remove delete operation
+      const deletedOpr = operations.splice(-1)[0]
+      if (deletedOpr !== previousDeletedOperation) {
+        throw new Error('Deleted operation is not the last operation')
+      }
+      const replaceOp: ImmerOperation = { op: 'replace', path, index: i++, value: newList[j++] }
+      operations.push(replaceOp)
+    } else {
+      const insertOp: ImmerOperation = { op: 'insert', path, index: i++, value: newList[j++] }
+      operations.push(insertOp)
+    }
+
+    previousDeletedOperation = undefined
   }
 
   // Remove operations that haven't been applied by immer
@@ -103,7 +123,7 @@ const _getListOperations = (
 
     const listPatch = listPatches.find(
       (op) =>
-        (op.op === 'replace' || op.op === 'add') &&
+        (op.op === 'replace' || op.op === 'add' || op.op === 'remove') &&
         op.path.length > 0 &&
         op.path[op.path.length - 1] === operation.index,
     )
@@ -113,7 +133,7 @@ const _getListOperations = (
 
     finalOperations.push(operation)
   }
-  return operations
+  return finalOperations
 }
 
 /**
@@ -218,7 +238,6 @@ export const applyPatchOperationsToFragment = ({
   const requests: DocumentOperationRequest[] = []
 
   let immutableFragment = createImmutableFragment(fragment, fragmentIdToPath)
-
   for (const operation of operations) {
     if (operation.op === 'root') {
       if (operations.length > 1) {
@@ -237,11 +256,19 @@ export const applyPatchOperationsToFragment = ({
     switch (operation.op) {
       case 'insert':
         {
+          if (Debug.debugLocalOperations) {
+            console.log(`[Local operation] Inserting fragment`, operation.path, operation.index)
+          }
+
           const { insertedFragment } = immutableFragment.insertAtImmerPath({
             insertedFragment: documentToFragment(operation.value),
             parentImmerPath: operation.path,
             index: operation.index,
           })
+
+          if (Debug.debugLocalOperations) {
+            console.log(`[Local operation] Inserted successfully fragment ${insertedFragment.id}`)
+          }
 
           // Insert requests
           requests.push({
@@ -256,9 +283,15 @@ export const applyPatchOperationsToFragment = ({
       case 'delete':
         {
           const immerPath: ImmerPath = [...operation.path, operation.index]
+          if (Debug.debugLocalOperations) {
+            console.log(`[Local operation] Removing fragment`, operation.path, operation.index)
+          }
           const { removedFragment } = immutableFragment.deleteAtImmerPath({
             immerPath,
           })
+          if (Debug.debugLocalOperations) {
+            console.log(`[Local operation] Removed fragment successfully ${removedFragment.id}`)
+          }
 
           // Insert requests
           requests.push({
@@ -271,6 +304,13 @@ export const applyPatchOperationsToFragment = ({
       case 'replace':
         {
           // Replace is a combination of delete and insert, except that we inject the old fragment id in the insert request
+          if (Debug.debugLocalOperations) {
+            console.log(
+              '[Local operation start] Replacing fragment',
+              operation.path,
+              operation.index,
+            )
+          }
 
           // Delete
           const immerPath: ImmerPath = [...operation.path, operation.index]
@@ -278,12 +318,11 @@ export const applyPatchOperationsToFragment = ({
             immerPath,
           })
 
-          // Insert delete requests
-          requests.push({
-            op: 'delete',
-            id: removedFragment.id,
-            parentId: removedFragment.parentId!,
-          })
+          if (Debug.debugLocalOperations) {
+            console.log(
+              `[Local operation] Removed fragment ${removedFragment.id} ${removedFragment.parentListIndex} (replace)`,
+            )
+          }
 
           // Insert
           const { insertedFragment } = immutableFragment.insertAtImmerPath({
@@ -292,24 +331,40 @@ export const applyPatchOperationsToFragment = ({
             index: operation.index,
           })
 
-          // Insert inserts requests
+          if (Debug.debugLocalOperations) {
+            console.log(
+              `[Local operation] Inserted fragment ${insertedFragment.id} (replace) - finished`,
+            )
+          }
+
+          // Insert requests
           requests.push({
-            op: 'insert',
-            parentId: insertedFragment.parentId!,
-            parentMapKey: insertedFragment.parentMapKey,
-            parentListIndex: insertedFragment.parentListIndex,
+            op: 'replace',
+            id: insertedFragment.id,
             value: clone(insertedFragment),
           })
         }
         break
       case 'move':
         {
+          if (Debug.debugLocalOperations) {
+            console.log(
+              `[Local operation] Moving fragment `,
+              operation.path,
+              operation.oldIndex,
+              operation.newIndex,
+            )
+          }
+
           const { movedFragment, toIndex } = immutableFragment.moveIndexAtImmerPath({
             listImmerPath: operation.path,
             fromIndex: operation.oldIndex,
             toIndex: operation.newIndex,
           })
 
+          if (Debug.debugLocalOperations) {
+            console.log(`[Local operation] Moved fragment successfully `, movedFragment.id)
+          }
           // Insert requests
           requests.push({
             op: 'move',
