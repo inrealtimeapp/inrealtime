@@ -1,5 +1,5 @@
+import { RealtimeConfig } from '../../../../config'
 import { clone, Fragment, FragmentList, FragmentMap, FragmentTypeList } from '../../../../core'
-import { Debug, debugListFragmentIndexes } from './debug'
 import {
   addFragmentIdToPath,
   FragmentIdToPath,
@@ -33,8 +33,9 @@ type MoveFragment = {
 export const createImmutableFragment = (
   fragment: Fragment,
   fragmentIdToPath: FragmentIdToPath,
+  config?: RealtimeConfig,
 ): IImmutableFragment => {
-  return new ImmutableFragment(fragment, fragmentIdToPath)
+  return new ImmutableFragment(fragment, fragmentIdToPath, config)
 }
 
 export interface IImmutableFragment {
@@ -70,11 +71,13 @@ export class ImmutableFragment implements IImmutableFragment {
   _fragment: Fragment
   _fragmentIdToPath: FragmentIdToPath
   readonly _immutablePaths: ImmutablePaths
+  readonly _config?: RealtimeConfig
 
-  constructor(fragment: Fragment, fragmentIdToPath: FragmentIdToPath) {
+  constructor(fragment: Fragment, fragmentIdToPath: FragmentIdToPath, config?: RealtimeConfig) {
     this._fragment = fragment
     this._fragmentIdToPath = fragmentIdToPath
     this._immutablePaths = {}
+    this._config = config
   }
 
   getFragment(): Fragment {
@@ -135,7 +138,7 @@ export class ImmutableFragment implements IImmutableFragment {
           (f) => f.parentListIndex === listIndex,
         )
 
-        if (Debug.debugListFragmentIndexes) {
+        if (this._config?.logging.listFragmentIndexes) {
           if (!subSubFragment) {
             console.warn(
               `Could not find sub fragment with list index '${listIndex}'`,
@@ -361,7 +364,7 @@ export class ImmutableFragment implements IImmutableFragment {
       insertedFragment.parentListIndex = addedIndex
 
       // Debug that indexes are not correct
-      if (Debug.debugListFragmentIndexes) {
+      if (this._config?.logging.listFragmentIndexes) {
         debugListFragmentIndexes(parentFragment, `About to insert at ${addedIndex}.`)
       }
 
@@ -403,7 +406,7 @@ export class ImmutableFragment implements IImmutableFragment {
     ;(parentFragment as FragmentMap | FragmentList).value[fragmentIndex] = insertedFragment
 
     // Debug that indexes are not correct
-    if (Debug.debugListFragmentIndexes && parentFragment.type === FragmentTypeList) {
+    if (this._config?.logging.listFragmentIndexes && parentFragment.type === FragmentTypeList) {
       debugListFragmentIndexes(
         parentFragment,
         `Inserted at ${insertedFragment.parentListIndex}. ${
@@ -462,7 +465,7 @@ export class ImmutableFragment implements IImmutableFragment {
     let removedIndex: string | number
     if (parentFragment.type === FragmentTypeList) {
       // Debug that indexes are not correct
-      if (Debug.debugListFragmentIndexes) {
+      if (this._config?.logging.listFragmentIndexes) {
         debugListFragmentIndexes(
           parentFragment,
           `About to delete fragment at index '${removedFragment.parentListIndex}'`,
@@ -489,7 +492,7 @@ export class ImmutableFragment implements IImmutableFragment {
       }
 
       // Debug that indexes are not correct
-      if (Debug.debugListFragmentIndexes) {
+      if (this._config?.logging.listFragmentIndexes) {
         debugListFragmentIndexes(parentFragment, `Deleted fragment at index '${removedIndex}'`)
       }
     } else {
@@ -572,7 +575,7 @@ export class ImmutableFragment implements IImmutableFragment {
     toIndex = toIndex >= listFragments.length ? listFragments.length - 1 : toIndex
 
     // Debug that indexes are not correct
-    if (Debug.debugListFragmentIndexes) {
+    if (this._config?.logging.listFragmentIndexes) {
       debugListFragmentIndexes(
         listFragment,
         `About to move fragment from '${fromIndex}' to '${toIndex}'`,
@@ -606,7 +609,7 @@ export class ImmutableFragment implements IImmutableFragment {
     }
 
     // Debug that indexes are not correct
-    if (Debug.debugListFragmentIndexes) {
+    if (this._config?.logging.listFragmentIndexes) {
       debugListFragmentIndexes(listFragment, `Moved fragment from '${fromIndex}' to '${toIndex}'`)
     }
 
@@ -674,5 +677,23 @@ export class ImmutableFragment implements IImmutableFragment {
         ]
     }
     return subDocument
+  }
+}
+
+export const debugListFragmentIndexes = (listFragment: Fragment, extraInfo: string) => {
+  // Debug that indexes are not correct
+  const allListItems = Object.values(listFragment.value)
+  const allListItemsIndexes = allListItems.map((item) => item.parentListIndex!)
+  if (allListItemsIndexes.length !== new Set(allListItemsIndexes).size) {
+    console.warn(`List fragment indexes are not unique. ${allListItemsIndexes}`, extraInfo)
+  }
+  const expectedIndexes = Array.from({ length: allListItems.length }, (_, i) => i)
+  for (const expectedIndex of expectedIndexes) {
+    if (!allListItemsIndexes.includes(expectedIndex)) {
+      console.warn(
+        `List fragment indexes are not correct. Missing index: ${expectedIndex}.`,
+        extraInfo,
+      )
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { RealtimeConfig } from '../config'
 import { RealtimeMessage, RealtimeWebSocket, uniqueId } from '../core'
 import { createMessageStore } from './createMessageStore'
 import { MessageStore, RealtimeWebSocketStatus } from './types'
@@ -27,9 +28,11 @@ export type UseWebSocket = {
 export const useWebSocket = ({
   socketUrl,
   token,
+  config,
 }: {
   socketUrl?: string
   token?: string
+  config: RealtimeConfig
 }): UseWebSocket => {
   const [socketStatus, setSocketStatus] = useState<RealtimeWebSocketStatus>(
     RealtimeWebSocketStatus.Closed,
@@ -43,17 +46,17 @@ export const useWebSocket = ({
     () =>
       new RealtimeWebSocket({
         onOpen: () => {
-          console.log('Socket status -> Authenticating')
+          if (config.logging.socketStatus) console.log('Socket status -> Authenticating')
           setSocketStatus(RealtimeWebSocketStatus.Authenticating)
           socketStatusRef.current = RealtimeWebSocketStatus.Authenticating
         },
         onConnecting: () => {
-          console.log('Socket status -> Connecting')
+          if (config.logging.socketStatus) console.log('Socket status -> Connecting')
           setSocketStatus(RealtimeWebSocketStatus.Connecting)
           socketStatusRef.current = RealtimeWebSocketStatus.Connecting
         },
         onClose: () => {
-          console.log('Socket status -> Closed')
+          if (config.logging.socketStatus) console.log('Socket status -> Closed')
           setSocketStatus(RealtimeWebSocketStatus.Closed)
           socketStatusRef.current = RealtimeWebSocketStatus.Closed
         },
@@ -92,7 +95,7 @@ export const useWebSocket = ({
   // Connect and re-connections
   useEffect(() => {
     if (!socketUrl && socketStatus !== RealtimeWebSocketStatus.Closed) {
-      console.log('Socket status -> Closing')
+      if (config.logging.socketStatus) console.log('Socket status -> Closing')
       setSocketStatus(RealtimeWebSocketStatus.Closed)
       socketStatusRef.current = RealtimeWebSocketStatus.Closed
       webSocket.close()
@@ -119,7 +122,7 @@ export const useWebSocket = ({
         if (message.type !== 'token' || socketStatus !== RealtimeWebSocketStatus.Authenticating) {
           return
         }
-        console.log('Socket status -> Open')
+        if (config.logging.socketStatus) console.log('Socket status -> Open')
         setSocketStatus(RealtimeWebSocketStatus.Open)
         socketStatusRef.current = RealtimeWebSocketStatus.Open
       },
@@ -150,7 +153,7 @@ export const useWebSocket = ({
 
   useEffect(() => {
     return () => {
-      console.log('Socket -> Closing on dismount')
+      if (config.logging.socketStatus) console.log('Socket -> Closing on dismount')
       webSocket.close()
     }
   }, [webSocket])
@@ -174,7 +177,7 @@ const useRawChannel = ({
   groupMessagesOnSend?: (messages: RealtimeMessage[]) => RealtimeMessage[]
 }): { sendMessage(message: RealtimeMessage): void } => {
   const messageQueueRef = useRef<RealtimeMessage[]>([])
-  const sendMessagesInterval = useRef<NodeJS.Timer>()
+  const sendMessagesInterval = useRef<number>()
 
   useMessages(
     messageStoreRef.current,
@@ -202,71 +205,11 @@ const useRawChannel = ({
       messageQueueRef.current = []
       messages.forEach((message) => realtimeWebSocket.sendMessage(channel, message))
     }, throttle)
-    return () => clearInterval(sendMessagesInterval.current)
+    return () => clearInterval(sendMessagesInterval.current!)
   }, [throttle, channel, realtimeWebSocket, groupMessagesOnSend])
 
   const sendMessageCallback = useCallback((message: RealtimeMessage) => {
     messageQueueRef.current.push(message)
-  }, [])
-  return { sendMessage: sendMessageCallback }
-}
-
-const useRawChannel2 = ({
-  realtimeWebSocket,
-  messageStoreRef,
-  channel,
-  onMessage,
-  throttle,
-  groupMessagesOnSend,
-}: {
-  realtimeWebSocket: RealtimeWebSocket
-  messageStoreRef: MutableRefObject<MessageStore>
-  channel: string
-  onMessage: (message: RealtimeMessage) => void
-  throttle: number
-  groupMessagesOnSend?: (messages: RealtimeMessage[]) => RealtimeMessage[]
-}): { sendMessage(message: RealtimeMessage): void } => {
-  const messageQueueRef = useRef<RealtimeMessage[]>([])
-  const sendMessageIntervalId = useRef<NodeJS.Timer>()
-
-  useMessages(
-    messageStoreRef.current,
-    channel,
-    useCallback(
-      (message: RealtimeMessage) => {
-        onMessage(message)
-      },
-      [onMessage],
-    ),
-  )
-
-  useEffect(() => {
-    return () => {
-      sendMessageIntervalId.current && clearInterval(sendMessageIntervalId.current!)
-    }
-  }, [])
-
-  const sendMessages = useCallback(() => {
-    if (messageQueueRef.current.length === 0) {
-      return
-    }
-    const messages = groupMessagesOnSend
-      ? groupMessagesOnSend(messageQueueRef.current)
-      : messageQueueRef.current
-    if (!messages) {
-      return
-    }
-
-    messageQueueRef.current = []
-    messages.forEach((message) => realtimeWebSocket.sendMessage(channel, message))
-  }, [])
-
-  const sendMessageCallback = useCallback((message: RealtimeMessage) => {
-    messageQueueRef.current.push(message)
-    //sendMessages()
-    if (!sendMessageIntervalId.current) {
-      sendMessageIntervalId.current = setInterval(sendMessages, throttle)
-    }
   }, [])
   return { sendMessage: sendMessageCallback }
 }

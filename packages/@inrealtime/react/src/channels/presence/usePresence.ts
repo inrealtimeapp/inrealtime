@@ -274,7 +274,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
   const reset = useCallback(() => {
     collaboratorStore.reset()
     presenceStore.reset()
-    setPresenceClientId(undefined)
+    setPresenceClientId(undefined as any)
     preSyncMessagesRef.current = []
   }, [collaboratorStore.patch, presenceStore.patch])
 

@@ -1,16 +1,16 @@
-import { RealtimeStatus } from '@inrealtime/react'
 import { Reorder } from 'framer-motion'
 import { nanoid } from 'nanoid'
 import { Inter } from 'next/font/google'
-import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react'
+import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
 import { Avatars, Item } from '@/components'
-import { usePatch, useStatus, useStore } from '@/realtime.config'
+import { usePatch, useDocumentStatus, useStore } from '@/realtime.config'
+import { RealtimeDocumentStatus } from '@inrealtime/react'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  const status = useStatus()
+  const status = useDocumentStatus()
   const patch = usePatch()
 
   const [workingTitle, setWorkingTitle] = useState('')
@@ -102,7 +102,7 @@ export default function Home() {
         </button>
       </form>
 
-      {status !== RealtimeStatus.Ready && (
+      {status !== RealtimeDocumentStatus.Ready && (
         <div className='flex flex-col gap-3'>
           <div className='skeleton h-12 w-full rounded-md' />
           <div className='skeleton h-12 w-full rounded-md' />

@@ -1,9 +1,9 @@
 import { enablePatches, freeze, produceWithPatches } from 'immer'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { mountStoreDevtool } from 'simple-zustand-devtools'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
+import { RealtimeConfig } from '../../../config'
 import {
   DocumentOperationRequest,
   DocumentOperationsRequest,
@@ -42,11 +42,11 @@ type useStoreWithPatch<TRealtimeState> = {
 
 export const useRealtimeStore = <TRealtimeState>({
   onPatchOperations,
-  devtools,
+  config,
   name,
 }: {
   onPatchOperations?: (requests: DocumentOperationRequest[]) => void
-  devtools?: { name: string }
+  config: RealtimeConfig
   name: string
 }): RealtimeStore<TRealtimeState> => {
   const onPatchOperationsRef = useRef<(requests: DocumentOperationRequest[]) => void | undefined>()
@@ -95,6 +95,7 @@ export const useRealtimeStore = <TRealtimeState>({
             fragment: oldFragment,
             fragmentIdToPath: oldFragmentIdToPath,
             operations,
+            config,
           })
 
           set({
@@ -120,6 +121,7 @@ export const useRealtimeStore = <TRealtimeState>({
             fragmentIdToPath: oldFragmentIdToPath,
             messages,
             storeName: name,
+            config,
           })
 
           set({
@@ -145,6 +147,7 @@ export const useRealtimeStore = <TRealtimeState>({
               fragmentIdToPath: oldFragmentIdToPath,
             },
             truthStore: truthStoreRoot,
+            config,
           })
 
           set({
@@ -156,13 +159,6 @@ export const useRealtimeStore = <TRealtimeState>({
       })),
     ),
   )
-
-  useEffect(() => {
-    if (!devtools) {
-      return
-    }
-    mountStoreDevtool(devtools.name, useStoreWithPatchRef.current)
-  }, [])
 
   const getName = useCallback(() => name, [])
 

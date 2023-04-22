@@ -26,9 +26,9 @@ export const minifyOperations = (
       case 'replace':
         {
           // Filter out previous replaces of the same fragment
-          // minifiedOperations = minifiedOperations.filter(
-          //   (opr) => !(opr.op === DocumentOperationReplace && opr.id === operation.id),
-          // )
+          minifiedOperations = minifiedOperations.filter(
+            (opr) => !(opr.op === DocumentOperationReplace && opr.id === operation.id),
+          )
           minifiedOperations.push(operation)
         }
         break

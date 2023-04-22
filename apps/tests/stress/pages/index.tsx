@@ -21,10 +21,12 @@ export default function Home() {
     publicAuthKey: process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY,
     _package: {
       environment: process.env.NEXT_PUBLIC_REALTIME_DEVELOPMENT_ENVIRONMENT as any,
-      debug: {
+      logging: {
         conflicts: true,
       },
     },
+    throttle: 15,
+    autosave: true,
   })
 
   const doRandom = useCallback(() => {
