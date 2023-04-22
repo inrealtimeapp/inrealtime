@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.5
+
+### Patch Changes
+
+- Change status names
+
 ## 0.0.4
 
 ### Patch Changes
