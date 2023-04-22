@@ -24,6 +24,7 @@ import { createFragmentIdToPath } from './store/utils/pathUtils'
 import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtils'
 
 const OpsMessageType = 'ops'
+const MaxOpsPerMessage = 30
 
 export enum DocumentStatus {
   Unready = 'Unready',
@@ -417,14 +418,16 @@ export const useDocumentChannel = <TRealtimeState>({
     // Minified operations
     const minifiedOperations = minifyOperations(operations) as DocumentOperationRequest[]
 
-    // Create a single grouped message
-    const groupedMessages: DocumentOperationsRequest[] = [
-      {
+    // Create grouped messages based on chunk size
+    const groupedMessages: DocumentOperationsRequest[] = []
+    for (let i = 0; i < minifiedOperations.length; i += MaxOpsPerMessage) {
+      const chunk = minifiedOperations.slice(i, i + MaxOpsPerMessage)
+      groupedMessages.push({
         messageId: uniqueId(),
         type: OpsMessageType,
-        operations: minifiedOperations,
-      },
-    ]
+        operations: chunk,
+      })
+    }
 
     if (minifiedOperations.length > 0) {
       const opsIndex = unackedOperationsRef.current.indexOf(opsMessages[0])

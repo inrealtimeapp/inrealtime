@@ -25,7 +25,7 @@ export default function Home() {
         conflicts: true,
       },
     },
-    throttle: 16,
+    throttle: 15,
     autosave: true,
   })
 

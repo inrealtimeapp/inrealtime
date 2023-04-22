@@ -209,15 +209,7 @@ export const useAutosave = ({
       if (localChange) {
         unremovedLocalChangesRef.current.push(localChange)
       } else {
-        console.warn(
-          "Couldn't find local change for acked operation",
-          'localChangesRef',
-          clone(localChangesRef.current),
-          'unsavedLocalChangesRef',
-          clone(unsavedLocalChangesRef.current),
-          'ackMessageId',
-          ackMessageId,
-        )
+        console.warn("Couldn't find local change for acked operation")
       }
     }
 
