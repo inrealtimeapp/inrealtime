@@ -164,8 +164,6 @@ export const useDocumentChannel = <TRealtimeState>({
         return
       }
 
-      console.log(fragment)
-
       const document = fragmentToDocument({ fragment })
       const fragmentIdToPath = createFragmentIdToPath({ fragment })
       localStore.setRoot({

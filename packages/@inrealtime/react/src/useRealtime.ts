@@ -32,12 +32,12 @@ export type UseRealtimeOptions = {
   }
 }
 
-export enum RealtimeStatus {
+export enum RealtimeDocumentStatus {
   Unready = 'Unready',
   Ready = 'Ready',
 }
 
-export enum ConnectionStatus {
+export enum RealtimeConnectionStatus {
   Closed = 'Closed',
   Connecting = 'Connecting',
   Authenticating = 'Authenticating',
@@ -80,12 +80,14 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
     [],
   )
 
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
-    ConnectionStatus.Closed,
+  const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>(
+    RealtimeConnectionStatus.Closed,
   )
-  const [status, setStatus] = useState<RealtimeStatus>(RealtimeStatus.Unready)
+  const [realtimeDocumentStatus, setRealtimeDocumentStatus] = useState<RealtimeDocumentStatus>(
+    RealtimeDocumentStatus.Unready,
+  )
 
-  const { token, socketUrl, projectId } = useAuth({
+  const { token, socketUrl } = useAuth({
     config,
     documentId,
     getAuthToken,
@@ -140,55 +142,55 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   })
 
   useEffect(() => {
-    let updatedConnectionStatus: ConnectionStatus
+    let updatedConnectionStatus: RealtimeConnectionStatus
     switch (webSocketStatus) {
       case RealtimeWebSocketStatus.Closed:
-        updatedConnectionStatus = ConnectionStatus.Closed
+        updatedConnectionStatus = RealtimeConnectionStatus.Closed
         break
       case RealtimeWebSocketStatus.Connecting:
-        updatedConnectionStatus = ConnectionStatus.Connecting
+        updatedConnectionStatus = RealtimeConnectionStatus.Connecting
         break
       case RealtimeWebSocketStatus.Authenticating:
-        updatedConnectionStatus = ConnectionStatus.Authenticating
+        updatedConnectionStatus = RealtimeConnectionStatus.Authenticating
         break
       case RealtimeWebSocketStatus.Open:
-        updatedConnectionStatus = ConnectionStatus.Subscribing
+        updatedConnectionStatus = RealtimeConnectionStatus.Subscribing
         break
     }
     switch (documentStatus) {
       case DocumentStatus.Unready:
         break
       case DocumentStatus.Subscribing:
-        updatedConnectionStatus = ConnectionStatus.Subscribing
+        updatedConnectionStatus = RealtimeConnectionStatus.Subscribing
         break
       case DocumentStatus.Ready:
-        updatedConnectionStatus = ConnectionStatus.Ready
+        updatedConnectionStatus = RealtimeConnectionStatus.Ready
         break
     }
 
     // If presence is not ready we keep it at subscribing
     if (
-      updatedConnectionStatus === ConnectionStatus.Ready &&
+      updatedConnectionStatus === RealtimeConnectionStatus.Ready &&
       presenceStatus !== PresenceStatus.Ready
     ) {
-      updatedConnectionStatus = ConnectionStatus.Subscribing
+      updatedConnectionStatus = RealtimeConnectionStatus.Subscribing
     }
 
     if (
-      updatedConnectionStatus === ConnectionStatus.Ready ||
+      updatedConnectionStatus === RealtimeConnectionStatus.Ready ||
       documentEditStatus === DocumentEditStatus.Ready ||
       documentEditStatus === DocumentEditStatus.ReadyLocal
     ) {
-      setStatus(RealtimeStatus.Ready)
+      setRealtimeDocumentStatus(RealtimeDocumentStatus.Ready)
     } else {
-      setStatus(RealtimeStatus.Unready)
+      setRealtimeDocumentStatus(RealtimeDocumentStatus.Unready)
     }
 
     setConnectionStatus(updatedConnectionStatus)
   }, [webSocketStatus, documentStatus, documentEditStatus, presenceStatus])
 
   return {
-    status,
+    documentStatus: realtimeDocumentStatus,
     connectionStatus,
     useStore,
     patch,

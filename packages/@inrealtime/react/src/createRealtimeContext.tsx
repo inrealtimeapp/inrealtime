@@ -11,11 +11,16 @@ import {
   UseMe,
 } from './channels/presence/types'
 import { PresenceClient } from './core'
-import { ConnectionStatus, RealtimeStatus, useRealtime, UseRealtimeOptions } from './useRealtime'
+import {
+  RealtimeConnectionStatus,
+  RealtimeDocumentStatus,
+  useRealtime,
+  UseRealtimeOptions,
+} from './useRealtime'
 
 type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
-  status: RealtimeStatus
-  connectionStatus: ConnectionStatus
+  documentStatus: RealtimeDocumentStatus
+  connectionStatus: RealtimeConnectionStatus
   useStore: UseStore<TRealtimeState>
   patch: Patch<TRealtimeState>
   subscribe: Subscribe<TRealtimeState>
@@ -35,8 +40,8 @@ type RealtimeProviderProps = {
 type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
   RealtimeProvider(props: RealtimeProviderProps): JSX.Element
   useRealtimeContext(): RealtimeContextProps<TRealtimeState, TRealtimePresenceData>
-  useStatus(): RealtimeStatus
-  useConnectionStatus(): ConnectionStatus
+  useDocumentStatus(): RealtimeDocumentStatus
+  useConnectionStatus(): RealtimeConnectionStatus
   useStore: UseStore<TRealtimeState>
   usePatch(): Patch<TRealtimeState>
   useSubscribe(): Subscribe<TRealtimeState>
@@ -67,7 +72,7 @@ export const createRealtimeContext = <
     _package,
   }: RealtimeProviderProps) => {
     const {
-      status,
+      documentStatus,
       connectionStatus,
       useStore,
       patch,
@@ -91,7 +96,7 @@ export const createRealtimeContext = <
     return (
       <RealtimeContext.Provider
         value={{
-          status,
+          documentStatus,
           connectionStatus,
           useStore,
           patch,
@@ -117,14 +122,14 @@ export const createRealtimeContext = <
     >
   }
 
-  const useStatus = () => {
-    const { status } = useRealtimeContext()
+  const useDocumentStatus = () => {
+    const { documentStatus } = useRealtimeContext()
 
-    if (status === null) {
+    if (documentStatus === null) {
       throw new Error('No RealtimeProvider provided')
     }
 
-    return status
+    return documentStatus
   }
 
   const useConnectionStatus = () => {
@@ -249,7 +254,7 @@ export const createRealtimeContext = <
   return {
     RealtimeProvider,
     useRealtimeContext,
-    useStatus,
+    useDocumentStatus,
     useConnectionStatus,
     useStore,
     usePatch,
