@@ -26,6 +26,7 @@ export default function Home() {
       },
     },
     throttle: 16,
+    autosave: true,
   })
 
   const doRandom = useCallback(() => {

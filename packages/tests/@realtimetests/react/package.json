@@ -1,11 +1,11 @@
 {
   "name": "@realtimetests/react",
   "author": "slate.se",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "Apache-2.0",
   "main": "dist/index",
   "scripts": {
-    "build": "rm -r dist && cp -rf ../../../@inrealtime/react/dist ./"
+    "build": "(rm -r dist || true) && cp -rf ../../../@inrealtime/react/dist ./"
   },
   "peerDependencies": {
     "react": "*"

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { RealtimeConfig } from '../../../config'
-import { DocumentOperationsRequest, Fragment } from '../../../core'
+import { clone, DocumentOperationsRequest, Fragment } from '../../../core'
 import { RealtimeStore } from '../store/types'
 import { IAutosave } from './autosave'
 import { IndexedAutosave } from './indexeddb_autosave'
@@ -96,30 +96,34 @@ export const useAutosave = ({
         return
       }
 
+      // We need to initially update local refs to avoid async issues
+      const changesToSave = unsavedLocalChangesRef.current
+      const changesToRemove = unremovedLocalChangesRef.current
+      unremovedLocalChangesRef.current = []
+      unsavedLocalChangesRef.current = []
+      localChangesRef.current = localChangesRef.current.filter(
+        (request) => !changesToRemove.includes(request),
+      )
       unsavedChangesRef.current = false
 
       // Save fragment
       await autosaveDatabase.saveFragment(localStore.getRoot().fragment)
 
       // Save local changes
-      for (const request of unsavedLocalChangesRef.current) {
+      // This needs to occur in the correct row, 1 by 1
+      for (const request of changesToSave) {
         try {
           localChangesRef.current.push(await autosaveDatabase.saveOperation(request))
         } catch (error) {
           console.error(error)
         }
       }
-      unsavedLocalChangesRef.current = []
 
       // Remove local changes
       const promises: Promise<any>[] = []
-      for (const request of unremovedLocalChangesRef.current) {
+      for (const request of changesToRemove) {
         promises.push(autosaveDatabase.removeOperation(request.id))
       }
-      localChangesRef.current = localChangesRef.current.filter(
-        (request) => !unremovedLocalChangesRef.current.includes(request),
-      )
-      unremovedLocalChangesRef.current = []
 
       for (const promise of promises) {
         try {
@@ -195,20 +199,25 @@ export const useAutosave = ({
 
     // If the local changed hasn't been saved we can just remove it
     // Otherwise we need to remove the operation from the saved local change
-    const unsavedLocalChange = unsavedLocalChangesRef.current.find(
+    const unsavedLocalChangeIndex = unsavedLocalChangesRef.current.findIndex(
       (r) => r.messageId === ackMessageId,
-    )!
-    if (unsavedLocalChange) {
-      unsavedLocalChangesRef.current.splice(
-        unsavedLocalChangesRef.current.indexOf(unsavedLocalChange),
-        1,
-      )
+    )
+    if (unsavedLocalChangeIndex >= 0) {
+      unsavedLocalChangesRef.current.splice(unsavedLocalChangeIndex, 1)
     } else {
       const localChange = localChangesRef.current.find((r) => r.messageId === ackMessageId)!
       if (localChange) {
         unremovedLocalChangesRef.current.push(localChange)
       } else {
-        console.warn("Couldn't find local change for acked operation")
+        console.warn(
+          "Couldn't find local change for acked operation",
+          'localChangesRef',
+          clone(localChangesRef.current),
+          'unsavedLocalChangesRef',
+          clone(unsavedLocalChangesRef.current),
+          'ackMessageId',
+          ackMessageId,
+        )
       }
     }
 
