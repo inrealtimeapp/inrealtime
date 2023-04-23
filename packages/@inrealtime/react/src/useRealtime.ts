@@ -22,7 +22,7 @@ export type UseRealtimeOptions = {
   throttle?: number
   _package?: {
     environment?: 'local' | 'development' | 'production'
-    logging: {
+    logging?: {
       conflicts?: boolean
       socketStatus?: boolean
       listFragmentIndexes?: boolean
@@ -117,7 +117,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   })
 
   // System channel
-  useSystemChannel({ webSocketStatus, useChannel })
+  useSystemChannel({ useChannel })
 
   // Presence channel
   const {
@@ -176,6 +176,8 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
       updatedConnectionStatus = RealtimeConnectionStatus.Subscribing
     }
 
+    // We may get that connection status is subscribing while realtime document status is ready even though autosave is off
+    // This is because if presence is not ready we keep it at subscribing
     if (
       updatedConnectionStatus === RealtimeConnectionStatus.Ready ||
       documentEditStatus === DocumentEditStatus.Ready ||

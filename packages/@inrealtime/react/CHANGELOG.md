@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.7
+
+### Patch Changes
+
+- Autosave, grouping of messages, updated status hooks, realtime fixes
+
 ## 0.1.6
 
 ### Patch Changes

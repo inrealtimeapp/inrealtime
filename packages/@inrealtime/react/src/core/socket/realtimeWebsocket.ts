@@ -1,9 +1,12 @@
+import { RealtimeConfig } from '../../config'
 import { RealtimeMessage } from '../types/realtimeMessage'
 
 type onHook = (() => void) | (() => Promise<void>)
 type onMessageHook =
   | ((channel: string, message: RealtimeMessage) => void)
   | ((channel: string, message: RealtimeMessage) => Promise<void>)
+
+const socketTimeout = 15000
 
 export class RealtimeWebSocket {
   private _webSocket?: WebSocket
@@ -12,21 +15,27 @@ export class RealtimeWebSocket {
   private readonly _onConnecting?: onHook
   private readonly _onClose?: onHook
   private readonly _onMessage?: onMessageHook
+  private readonly _config?: RealtimeConfig
+  private _lastReceivedMessage?: Date
+  private _timeoutTimer?: any
   constructor({
     onOpen,
     onConnecting,
     onClose,
     onMessage,
+    config,
   }: {
     onOpen?: onHook
     onConnecting?: onHook
     onClose?: onHook
     onMessage?: onMessageHook
+    config?: RealtimeConfig
   }) {
     this._onOpen = onOpen
     this._onConnecting = onConnecting
     this._onClose = onClose
     this._onMessage = onMessage
+    this._config = config
   }
 
   setSocketUrl({ socketUrl }: { socketUrl: string }) {
@@ -38,6 +47,11 @@ export class RealtimeWebSocket {
   }
 
   sendMessage(channel: string, message: RealtimeMessage) {
+    if (this._webSocket?.readyState !== WebSocket.OPEN) {
+      this.close()
+      return
+    }
+
     // console.log(`Sending message on channel '${channel}' with type '${message.type}'.`)
     this._webSocket?.send(`${channel}:${JSON.stringify(message, this._jsonStringifyReplacer)}`)
   }
@@ -47,6 +61,10 @@ export class RealtimeWebSocket {
   }
 
   _close(webSocket?: WebSocket) {
+    if (this._timeoutTimer !== undefined) {
+      clearInterval(this._timeoutTimer)
+    }
+
     if (!webSocket) {
       return
     }
@@ -64,6 +82,14 @@ export class RealtimeWebSocket {
 
     this._close(this._webSocket)
     const webSocket = new WebSocket(this._socketUrl)
+    this._lastReceivedMessage = new Date()
+    this._timeoutTimer = setInterval(() => {
+      const now = new Date()
+      if (now.getTime() - this._lastReceivedMessage!.getTime() > socketTimeout) {
+        this._close(webSocket)
+        console.log('timeout disconnect')
+      }
+    }, socketTimeout / 2)
 
     webSocket.onopen = () => {
       if (this._onOpen) {
@@ -75,7 +101,10 @@ export class RealtimeWebSocket {
       if (this._onClose) {
         this._onClose()
       }
-      console.log(`Socket closed with code '${e.code}', type '${e.type}' and reason '${e.reason}'.`)
+      if (this._config?.logging.socketStatus)
+        console.log(
+          `Socket closed with code '${e.code}', type '${e.type}' and reason '${e.reason}'.`,
+        )
     }
 
     webSocket.onerror = () => {
@@ -87,6 +116,8 @@ export class RealtimeWebSocket {
         console.log(`Ignored message '${e.data}' as no onMessage hook was found.`)
         return
       }
+
+      this._lastReceivedMessage = new Date()
 
       const unparsedMessage = e?.data
       if (!unparsedMessage) {
@@ -112,7 +143,7 @@ export class RealtimeWebSocket {
         return
       }
 
-      //console.log(`Received message on channel '${channel}' and type '${message.type}'`);
+      //console.log(`Received message on channel '${channel}' and type '${message.type}'`)
       this._onMessage(channel, message)
     }
 
