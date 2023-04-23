@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.8
+
+### Patch Changes
+
+- Updated how websockets live, specifically for iOS safari, updated ping pong strat
+
 ## 0.1.7
 
 ### Patch Changes

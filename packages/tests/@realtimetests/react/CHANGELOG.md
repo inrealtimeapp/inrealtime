@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated how websockets live, specifically for iOS safari, updated ping pong strat
+
 ## 0.0.5
 
 ### Patch Changes
