@@ -87,7 +87,6 @@ export class RealtimeWebSocket {
       const now = new Date()
       if (now.getTime() - this._lastReceivedMessage!.getTime() > socketTimeout) {
         this._close(webSocket)
-        console.log('timeout disconnect')
       }
     }, socketTimeout / 2)
 
@@ -101,10 +100,15 @@ export class RealtimeWebSocket {
       if (this._onClose) {
         this._onClose()
       }
-      if (this._config?.logging.socketStatus)
+      if (e.code === 3000) {
+        console.warn(
+          `Socket closed with code '${e.code}', type '${e.type}' and reason '${e.reason}'.`,
+        )
+      } else if (this._config?.logging.socketStatus) {
         console.log(
           `Socket closed with code '${e.code}', type '${e.type}' and reason '${e.reason}'.`,
         )
+      }
     }
 
     webSocket.onerror = () => {

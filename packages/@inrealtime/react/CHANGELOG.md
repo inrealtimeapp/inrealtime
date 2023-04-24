@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.9
+
+### Patch Changes
+
+- Added error messages in auth in realtime
+
 ## 0.1.8
 
 ### Patch Changes

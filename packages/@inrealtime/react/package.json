@@ -1,7 +1,7 @@
 {
   "name": "@inrealtime/react",
   "author": "slate.se",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "license": "Apache-2.0",
   "main": "dist/index",
   "scripts": {
