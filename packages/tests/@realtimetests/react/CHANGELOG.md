@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.8
+
+### Patch Changes
+
+- Exposed get realtime auth token
+
 ## 0.0.7
 
 ### Patch Changes
