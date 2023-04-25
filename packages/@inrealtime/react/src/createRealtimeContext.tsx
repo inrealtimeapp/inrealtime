@@ -14,8 +14,8 @@ import { PresenceClient } from './core'
 import {
   RealtimeConnectionStatus,
   RealtimeDocumentStatus,
+  RealtimeOptions,
   useRealtime,
-  UseRealtimeOptions,
 } from './useRealtime'
 
 type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
@@ -35,7 +35,7 @@ type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
 
 type RealtimeProviderProps = {
   children: React.ReactNode
-} & UseRealtimeOptions
+} & RealtimeOptions
 
 type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
   RealtimeProvider(props: RealtimeProviderProps): JSX.Element

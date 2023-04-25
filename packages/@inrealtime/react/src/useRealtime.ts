@@ -14,7 +14,7 @@ import { GetRealtimeAuthToken } from './core'
 import { RealtimeWebSocketStatus } from './socket/types'
 import { useWebSocket } from './socket/useWebSocket'
 
-export type UseRealtimeOptions = {
+export type RealtimeOptions = {
   documentId?: string
   getAuthToken?: GetRealtimeAuthToken
   publicAuthKey?: string
@@ -69,7 +69,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   autosave,
   throttle,
   _package,
-}: UseRealtimeOptions) => {
+}: RealtimeOptions) => {
   const config: RealtimeConfig = useMemo(
     () =>
       getRealtimeConfig({
