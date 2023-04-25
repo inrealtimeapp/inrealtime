@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { RealtimeConfig } from '../config'
-import { GetAuthToken, RealtimeAuth } from '../core'
+import { GetRealtimeAuthToken, RealtimeAuth } from '../core'
 
 // The initial wait time for re-trying on errors in milliseconds
 const AuthenticationErrorExponentialTimerStart = 1000
@@ -14,7 +14,7 @@ const ReAuthenticationTimeBeforeTokenExpiry = 2 * 60 * 1000 // 2 minutes
 
 type AuthOptions = {
   documentId?: string
-  getAuthToken?: GetAuthToken
+  getAuthToken?: GetRealtimeAuthToken
   publicAuthKey?: string
   config: RealtimeConfig
 }

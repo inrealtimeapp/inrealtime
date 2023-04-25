@@ -1,10 +1,14 @@
 import { RealtimeConfig } from '../../config'
 
-export type GetAuthToken = ({ documentId }: { documentId: string }) => string | Promise<string>
+export type GetRealtimeAuthToken = ({
+  documentId,
+}: {
+  documentId: string
+}) => string | Promise<string>
 
 export class RealtimeAuth {
   private readonly _config: RealtimeConfig
-  private readonly _getAuthToken?: GetAuthToken
+  private readonly _getAuthToken?: GetRealtimeAuthToken
   private readonly _publicAuthKey?: string
   constructor({
     config,
@@ -12,7 +16,7 @@ export class RealtimeAuth {
     publicAuthKey,
   }: {
     config: RealtimeConfig
-    getAuthToken?: GetAuthToken
+    getAuthToken?: GetRealtimeAuthToken
     publicAuthKey?: string
   }) {
     this._config = config

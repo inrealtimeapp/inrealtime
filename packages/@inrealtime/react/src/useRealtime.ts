@@ -10,13 +10,13 @@ import {
 import { PresenceStatus, usePresenceChannel } from './channels/presence/usePresence'
 import { useSystemChannel } from './channels/system/useSystem'
 import { getRealtimeConfig, RealtimeConfig } from './config'
-import { GetAuthToken } from './core'
+import { GetRealtimeAuthToken } from './core'
 import { RealtimeWebSocketStatus } from './socket/types'
 import { useWebSocket } from './socket/useWebSocket'
 
 export type UseRealtimeOptions = {
   documentId?: string
-  getAuthToken?: GetAuthToken
+  getAuthToken?: GetRealtimeAuthToken
   publicAuthKey?: string
   autosave?: boolean
   throttle?: number
