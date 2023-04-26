@@ -1,5 +1,23 @@
 # @realtimetests/react
 
+## 0.0.11
+
+### Patch Changes
+
+- Added more types expose
+
+## 0.0.10
+
+### Patch Changes
+
+- More exposing of types
+
+## 0.0.9
+
+### Patch Changes
+
+- Exposed realtime options"
+
 ## 0.0.8
 
 ### Patch Changes

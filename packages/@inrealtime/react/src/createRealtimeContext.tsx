@@ -18,7 +18,7 @@ import {
   useRealtime,
 } from './useRealtime'
 
-type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
+export type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
   documentStatus: RealtimeDocumentStatus
   connectionStatus: RealtimeConnectionStatus
   useStore: UseStore<TRealtimeState>

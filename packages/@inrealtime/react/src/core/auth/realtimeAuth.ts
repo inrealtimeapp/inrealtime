@@ -1,3 +1,4 @@
+import { getJwtPayload } from '../../auth/useAuth'
 import { RealtimeConfig } from '../../config'
 
 export type GetRealtimeAuthToken = ({
@@ -67,7 +68,7 @@ export class RealtimeAuth {
       throw new Error(`Either 'getAuthToken' or 'publicAuthKey' must be provided.`)
     }
 
-    const tokenPayload = JSON.parse(atob(token.split('.')[1]))
+    const tokenPayload = getJwtPayload(token)
     const projectId = tokenPayload.projectId
 
     return {

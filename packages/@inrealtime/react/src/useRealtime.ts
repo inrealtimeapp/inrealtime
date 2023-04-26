@@ -14,22 +14,23 @@ import { GetRealtimeAuthToken } from './core'
 import { RealtimeWebSocketStatus } from './socket/types'
 import { useWebSocket } from './socket/useWebSocket'
 
-export type RealtimeOptions = {
-  documentId?: string
-  getAuthToken?: GetRealtimeAuthToken
-  publicAuthKey?: string
-  autosave?: boolean
-  throttle?: number
-  _package?: {
-    environment?: 'local' | 'development' | 'production'
-    logging?: {
-      conflicts?: boolean
-      socketStatus?: boolean
-      listFragmentIndexes?: boolean
-      localOperations?: boolean
-      remoteOperations?: boolean
-    }
+export type RealtimePackageOptions = {
+  environment?: 'local' | 'development' | 'production'
+  logging?: {
+    conflicts?: boolean
+    socketStatus?: boolean
+    listFragmentIndexes?: boolean
+    localOperations?: boolean
+    remoteOperations?: boolean
   }
+}
+export type RealtimeOptions = {
+  documentId?: string | undefined
+  getAuthToken?: GetRealtimeAuthToken | undefined
+  publicAuthKey?: string | undefined
+  autosave?: boolean | undefined
+  throttle?: number | undefined
+  _package?: RealtimePackageOptions | undefined
 }
 
 export enum RealtimeDocumentStatus {
