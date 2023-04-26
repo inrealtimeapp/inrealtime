@@ -485,7 +485,7 @@ export const useDocumentChannel = <TRealtimeState>({
 
       // If autosave is disabled or editing is not ready, either remote or local, we reset the stores
       if (
-        !config.autosave ||
+        !config.autosave.enabled ||
         (editStatusRef.current !== DocumentEditStatus.Ready &&
           editStatusRef.current !== DocumentEditStatus.ReadyLocal)
       ) {

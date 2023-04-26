@@ -51,7 +51,7 @@ export const useAutosave = ({
 
   // Load from local store
   useEffect(() => {
-    if (!documentId || !config.autosave) {
+    if (!documentId || !config.autosave.enabled) {
       localChangesRef.current = []
       return
     }
@@ -82,7 +82,7 @@ export const useAutosave = ({
 
   // Autosave fragment and changes
   useEffect(() => {
-    if (!config.autosave || !documentId) {
+    if (!config.autosave.enabled || !documentId) {
       return
     }
 

@@ -1,3 +1,4 @@
+import { RealtimeConfig } from '../../../config'
 import { DocumentOperationsRequest, Fragment } from '../../../core'
 import { IAutosave } from './autosave'
 
@@ -8,11 +9,13 @@ const dbVersion = 1
 
 export class IndexedAutosave implements IAutosave {
   private readonly _documentId: string
+  private readonly _config: RealtimeConfig
   private _database: IDBDatabase | undefined
   private _initPromise: Promise<boolean>
 
-  constructor({ documentId }: { documentId: string }) {
+  constructor({ documentId, config }: { documentId: string; config: RealtimeConfig }) {
     this._documentId = documentId
+    this._config = config
   }
 
   connect(): Promise<boolean> {
@@ -26,11 +29,13 @@ export class IndexedAutosave implements IAutosave {
     }
 
     if (!this._initPromise) {
-      console.warn(
-        `Please note that the Realtime autosave feature is still in beta and not yet stable for production use. It currently relies on IndexedDB and is only supported by environments that support it. We're constantly working on improving this feature to ensure seamless and reliable functionality.`,
-        `We're exploring new ways to enhance the Realtime package interface, which would allow for selective syncing of messages, seeing the number of changes, applying changes, and more. Our current strategy is to store all changes and sync when connections are made.`,
-        `If you have any feedback or suggestions on how we can improve this feature or support more environments, please contact us at support@inrealtime.app. Our team is dedicated to providing you with the best possible experience using our software package.`,
-      )
+      if (this._config.autosave.disableWarning) {
+        console.warn(
+          `Please note that the Realtime autosave feature is still in beta and not yet stable for production use. It currently relies on IndexedDB and is only supported by environments that support it. We're constantly working on improving this feature to ensure seamless and reliable functionality.`,
+          `We're exploring new ways to enhance the Realtime package interface, which would allow for selective syncing of messages, seeing the number of changes, applying changes, and more. Our current strategy is to store all changes and sync when connections are made.`,
+          `If you have any feedback or suggestions on how we can improve this feature or support more environments, please contact us at support@inrealtime.app. Our team is dedicated to providing you with the best possible experience using our software package.`,
+        )
+      }
       this._initPromise = new Promise((resolve, reject) => {
         const request = window.indexedDB.open(`${dbNamePrefix}_${this._documentId}`, dbVersion)
 

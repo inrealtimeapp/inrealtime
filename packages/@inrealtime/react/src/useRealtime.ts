@@ -9,7 +9,7 @@ import {
 } from './channels/document/useDocument'
 import { PresenceStatus, usePresenceChannel } from './channels/presence/usePresence'
 import { useSystemChannel } from './channels/system/useSystem'
-import { getRealtimeConfig, RealtimeConfig } from './config'
+import { AutosaveOption, getRealtimeConfig, RealtimeConfig } from './config'
 import { GetRealtimeAuthToken } from './core'
 import { RealtimeWebSocketStatus } from './socket/types'
 import { useWebSocket } from './socket/useWebSocket'
@@ -28,7 +28,7 @@ export type RealtimeOptions = {
   documentId?: string | undefined
   getAuthToken?: GetRealtimeAuthToken | undefined
   publicAuthKey?: string | undefined
-  autosave?: boolean | undefined
+  autosave?: AutosaveOption | undefined
   throttle?: number | undefined
   _package?: RealtimePackageOptions | undefined
 }

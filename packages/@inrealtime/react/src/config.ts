@@ -1,3 +1,5 @@
+import { isMap } from './core'
+
 const allowedEnvironments = ['local', 'development', 'production']
 
 const webSocketUrls = {
@@ -12,6 +14,9 @@ const authUrls = {
   production: 'https://worker.inrealtime.app/auth',
 }
 
+type VerboseAutosave = { enabled: boolean; disableWarning: boolean }
+type VerboseAutosaveOption = Partial<VerboseAutosave>
+
 export type RealtimeConfig = {
   environment: 'local' | 'development' | 'production'
   authUrl: string
@@ -23,9 +28,10 @@ export type RealtimeConfig = {
     localOperations: boolean
     remoteOperations: boolean
   }
-  autosave: boolean
+  autosave: VerboseAutosave
 }
 
+export type AutosaveOption = boolean | VerboseAutosaveOption
 export const getRealtimeConfig = ({
   environment,
   logging,
@@ -39,13 +45,25 @@ export const getRealtimeConfig = ({
     localOperations?: boolean
     remoteOperations?: boolean
   }
-  autosave?: boolean
+  autosave?: AutosaveOption
 }): RealtimeConfig => {
   if (!environment || !allowedEnvironments.includes(environment)) {
     environment = 'production'
   }
   const authUrl = authUrls[environment]
   const webSocketUrl = webSocketUrls[environment]
+
+  // Create autosave object
+  let autosaveObj = { enabled: false, disableWarning: false }
+  if (autosave && isMap(autosave)) {
+    const verboseAutosave = autosave as VerboseAutosaveOption
+    autosaveObj = {
+      enabled: verboseAutosave.enabled === undefined || verboseAutosave.enabled, // Default if autosave={} then it is enabled
+      disableWarning: !!verboseAutosave?.disableWarning,
+    }
+  } else if (autosave) {
+    autosaveObj.enabled = true
+  }
 
   return {
     environment,
@@ -58,6 +76,6 @@ export const getRealtimeConfig = ({
       localOperations: logging?.localOperations ?? false,
       remoteOperations: logging?.remoteOperations ?? false,
     },
-    autosave: !!autosave,
+    autosave: autosaveObj,
   }
 }
