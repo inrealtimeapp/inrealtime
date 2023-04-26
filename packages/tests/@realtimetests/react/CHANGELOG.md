@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.14
+
+### Patch Changes
+
+- Updated autosave options"
+
 ## 0.0.13
 
 ### Patch Changes

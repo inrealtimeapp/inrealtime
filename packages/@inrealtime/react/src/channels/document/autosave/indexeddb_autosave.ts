@@ -29,7 +29,7 @@ export class IndexedAutosave implements IAutosave {
     }
 
     if (!this._initPromise) {
-      if (this._config.autosave.disableWarning) {
+      if (!this._config.autosave.disableWarning) {
         console.warn(
           `Please note that the Realtime autosave feature is still in beta and not yet stable for production use. It currently relies on IndexedDB and is only supported by environments that support it. We're constantly working on improving this feature to ensure seamless and reliable functionality.`,
           `We're exploring new ways to enhance the Realtime package interface, which would allow for selective syncing of messages, seeing the number of changes, applying changes, and more. Our current strategy is to store all changes and sync when connections are made.`,
