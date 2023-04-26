@@ -77,7 +77,6 @@ export class IndexedAutosave implements IAutosave {
     }
 
     this._database.close()
-    console.log('Database closed:', this._database.name, this._database.version)
 
     this._database = undefined
     ;(this._initPromise as any) = undefined

@@ -1,7 +1,7 @@
 {
   "name": "@realtimetests/react",
   "author": "slate.se",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "license": "Apache-2.0",
   "main": "dist/index",
   "scripts": {

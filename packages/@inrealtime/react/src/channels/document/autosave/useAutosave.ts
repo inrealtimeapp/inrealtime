@@ -56,7 +56,7 @@ export const useAutosave = ({
       return
     }
 
-    const autosaveDatabase: IAutosave = new IndexedAutosave({ documentId })
+    const autosaveDatabase: IAutosave = new IndexedAutosave({ documentId, config })
 
     autosaveDatabase.connect(documentId).then(async (enabled) => {
       if (!enabled) {
