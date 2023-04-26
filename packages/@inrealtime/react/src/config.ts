@@ -1,3 +1,4 @@
+import { IndexedAutosave } from './channels/document/autosave/indexeddb_autosave'
 import { isMap } from './core'
 
 const allowedEnvironments = ['local', 'development', 'production']
@@ -14,7 +15,14 @@ const authUrls = {
   production: 'https://worker.inrealtime.app/auth',
 }
 
-type VerboseAutosave = { enabled: boolean; disableWarning: boolean }
+type VerboseAutosave = {
+  storeNamePostfix: string
+  enabled: boolean
+  disableWarning: boolean
+  getInitialData:
+    | ((documentId: string) => Promise<any> | Promise<undefined> | any | undefined)
+    | undefined
+}
 type VerboseAutosaveOption = Partial<VerboseAutosave>
 
 export type RealtimeConfig = {
@@ -29,6 +37,21 @@ export type RealtimeConfig = {
     remoteOperations: boolean
   }
   autosave: VerboseAutosave
+}
+
+const indexedAutosaveMap: { [key: string]: IndexedAutosave } = {}
+
+export const getIndexedAutosaveInstance = ({
+  storeNamePostfix,
+  disableWarning,
+}: {
+  storeNamePostfix: string
+  disableWarning: boolean
+}) => {
+  if (!indexedAutosaveMap[storeNamePostfix]) {
+    indexedAutosaveMap[storeNamePostfix] = new IndexedAutosave({ storeNamePostfix, disableWarning })
+  }
+  return indexedAutosaveMap[storeNamePostfix]
 }
 
 export type AutosaveOption = boolean | VerboseAutosaveOption
@@ -54,12 +77,19 @@ export const getRealtimeConfig = ({
   const webSocketUrl = webSocketUrls[environment]
 
   // Create autosave object
-  let autosaveObj = { enabled: false, disableWarning: false }
+  let autosaveObj: VerboseAutosave = {
+    enabled: false,
+    storeNamePostfix: 'default',
+    disableWarning: false,
+    getInitialData: undefined,
+  }
   if (autosave && isMap(autosave)) {
     const verboseAutosave = autosave as VerboseAutosaveOption
     autosaveObj = {
       enabled: verboseAutosave.enabled === undefined || verboseAutosave.enabled, // Default if autosave={} then it is enabled
+      storeNamePostfix: verboseAutosave.storeNamePostfix ?? autosaveObj.storeNamePostfix,
       disableWarning: !!verboseAutosave?.disableWarning,
+      getInitialData: verboseAutosave?.getInitialData,
     }
   } else if (autosave) {
     autosaveObj.enabled = true

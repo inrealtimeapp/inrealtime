@@ -11,7 +11,7 @@ import { useMemo } from 'react'
 dayjs.extend(utc)
 
 export default function App({ Component, pageProps }: AppProps) {
-  const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
+  const startOfHour = '1' //useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
   return (
     <>
       <Head>
@@ -22,6 +22,7 @@ export default function App({ Component, pageProps }: AppProps) {
         documentId={startOfHour}
         publicAuthKey={process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY}
         throttle={20}
+        autosave
       >
         <Component {...pageProps} />
       </RealtimeProvider>

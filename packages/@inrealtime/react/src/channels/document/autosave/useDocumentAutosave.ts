@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-import { RealtimeConfig } from '../../../config'
-import { clone, DocumentOperationsRequest, Fragment } from '../../../core'
+import { getIndexedAutosaveInstance, RealtimeConfig } from '../../../config'
+import { DocumentOperationsRequest, Fragment } from '../../../core'
 import { RealtimeStore } from '../store/types'
-import { IAutosave } from './autosave'
-import { IndexedAutosave } from './indexeddb_autosave'
+import { AutosaveDocumentMetadata, IAutosave } from './autosave'
 
-export const useAutosave = ({
+export const useDocumentAutosave = ({
   config,
   documentId,
   localStore,
@@ -34,6 +33,9 @@ export const useAutosave = ({
   // Local changes that have not been stored in the autosave database
   const unsavedLocalChangesRef = useRef<DocumentOperationsRequest[]>([])
 
+  // Flag to indicate if the document is currently only stored locally
+  const documentMetadataRef = useRef<AutosaveDocumentMetadata>()
+
   // Mark for saving
   const markForLocalSaving = useCallback(() => {
     unsavedChangesRef.current = true
@@ -56,24 +58,34 @@ export const useAutosave = ({
       return
     }
 
-    const autosaveDatabase: IAutosave = new IndexedAutosave({ documentId, config })
+    const autosaveDatabase: IAutosave = getIndexedAutosaveInstance({
+      storeNamePostfix: config.autosave.storeNamePostfix,
+      disableWarning: config.autosave.disableWarning,
+    })
 
-    autosaveDatabase.connect(documentId).then(async (enabled) => {
+    autosaveDatabase.connect().then(async (enabled) => {
       if (!enabled) {
         return
       }
 
       autosaveDatabaseRef.current = autosaveDatabase
-      const fragmentPromise = autosaveDatabase.getFragment()
-      const localChangesPromise = autosaveDatabase.getOperations()
+      const documentMetadataPromise = autosaveDatabase.getDocumentMetadata({ documentId })
+      const fragmentPromise = autosaveDatabase.getFragment({ documentId })
+      const localChangesPromise = autosaveDatabase.getOperations({ documentId })
+      const documentMetadata = await documentMetadataPromise
       const fragment = await fragmentPromise
       const localChanges = await localChangesPromise
 
-      if (fragment && localChanges) {
+      if (documentMetadata && fragment && localChanges) {
         onLocalData(fragment)
+        documentMetadataRef.current = documentMetadata
         localChangesRef.current = localChanges
       } else {
         onNoLocalData()
+        documentMetadataRef.current = {
+          localOnly: false,
+          unsavedChanges: false,
+        }
         localChangesRef.current = []
       }
     })
@@ -106,14 +118,20 @@ export const useAutosave = ({
       )
       unsavedChangesRef.current = false
 
-      // Save fragment
-      await autosaveDatabase.saveFragment(localStore.getRoot().fragment)
+      // Save document metadata and fragment
+      await autosaveDatabase.saveDocumentMetadata({
+        documentId,
+        documentMetadata: documentMetadataRef.current!,
+      })
+      await autosaveDatabase.saveFragment({ documentId, fragment: localStore.getRoot().fragment })
 
       // Save local changes
       // This needs to occur in the correct row, 1 by 1
       for (const request of changesToSave) {
         try {
-          localChangesRef.current.push(await autosaveDatabase.saveOperation(request))
+          localChangesRef.current.push(
+            await autosaveDatabase.saveOperation({ documentId, message: request }),
+          )
         } catch (error) {
           console.error(error)
         }
@@ -132,7 +150,7 @@ export const useAutosave = ({
           console.error(error)
         }
       }
-    }, 1000)
+    }, 500)
     return () => {
       clearInterval(timer)
     }

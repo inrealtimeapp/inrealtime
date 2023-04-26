@@ -14,7 +14,7 @@ import {
 } from '../../core'
 import { RealtimeWebSocketStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
-import { useAutosave } from './autosave/useAutosave'
+import { useDocumentAutosave } from './autosave/useDocumentAutosave'
 import { areStoresEqual } from './store/tests/storeEqual'
 import { DocumentPatch } from './store/types'
 import { useRealtimeStore } from './store/useRealtimeStore'
@@ -152,7 +152,7 @@ export const useDocumentChannel = <TRealtimeState>({
     updateLocalChanges,
     getLocalChangesToSync,
     acknowledgeLocalChange,
-  } = useAutosave({
+  } = useDocumentAutosave({
     config,
     documentId,
     localStore,
