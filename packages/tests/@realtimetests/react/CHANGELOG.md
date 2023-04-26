@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.12
+
+### Patch Changes
+
+- Updated jwt token
+
 ## 0.0.11
 
 ### Patch Changes
