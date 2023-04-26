@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.10
+
+### Patch Changes
+
+- Updated JWT handling. Exposed some types.
+
 ## 0.1.9
 
 ### Patch Changes
