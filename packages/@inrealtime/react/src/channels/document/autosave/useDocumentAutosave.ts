@@ -89,7 +89,6 @@ export const useDocumentAutosave = ({
       const documentMetadata = await documentMetadataPromise
       const fragment = await fragmentPromise
       const localChanges = await localChangesPromise
-
       if (documentMetadata && fragment && localChanges) {
         onLocalData(fragment)
         documentMetadataRef.current = documentMetadata

@@ -208,6 +208,10 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // On sync message
   const onSyncMessage = useCallback((fragment: Fragment) => {
+    // Get local changes. We must get them before setting root of local store
+    const localChanges = getLocalChangesToSync()
+
+    // Sync documents and fragments
     const document = fragmentToDocument({ fragment })
     const fragmentIdToPath = createFragmentIdToPath({ fragment })
     localStore.setRoot({ document, fragment, fragmentIdToPath: { ...fragmentIdToPath } })
@@ -222,7 +226,6 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     // Apply any local changes and send them to the channel
-    const localChanges = getLocalChangesToSync()
     if (localChanges.length > 0) {
       applyRemoteOperationsToStores(localChanges, [localStore])
       for (const request of localChanges) {

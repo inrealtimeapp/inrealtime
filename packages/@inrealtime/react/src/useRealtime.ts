@@ -118,7 +118,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   })
 
   // System channel
-  useSystemChannel({ useChannel })
+  useSystemChannel({ webSocketStatus, useChannel })
 
   // Presence channel
   const {

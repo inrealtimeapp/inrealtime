@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.0.16
+
+### Patch Changes
+
+- Testing autosave new hooks
+
 ## 0.0.15
 
 ### Patch Changes
