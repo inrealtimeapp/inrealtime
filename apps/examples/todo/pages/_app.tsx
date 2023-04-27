@@ -7,11 +7,13 @@ import Head from 'next/head'
 
 import { RealtimeProvider } from '@/realtime.config'
 import { useMemo } from 'react'
+import { useAutosave } from '@inrealtime/react'
 
 dayjs.extend(utc)
 
 export default function App({ Component, pageProps }: AppProps) {
-  const startOfHour = '1' //useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
+  const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
+  const {} = useAutosave()
   return (
     <>
       <Head>

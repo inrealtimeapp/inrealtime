@@ -23,7 +23,7 @@ import { minifyOperations } from './store/utils/minifyOperations'
 import { createFragmentIdToPath } from './store/utils/pathUtils'
 import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtils'
 
-const OpsMessageType = 'ops'
+export const OpsMessageType = 'ops'
 const MaxOpsPerMessage = 30
 
 export enum DocumentStatus {

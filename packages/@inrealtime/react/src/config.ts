@@ -15,16 +15,6 @@ const authUrls = {
   production: 'https://worker.inrealtime.app/auth',
 }
 
-type VerboseAutosave = {
-  storeNamePostfix: string
-  enabled: boolean
-  disableWarning: boolean
-  getInitialData:
-    | ((documentId: string) => Promise<any> | Promise<undefined> | any | undefined)
-    | undefined
-}
-type VerboseAutosaveOption = Partial<VerboseAutosave>
-
 export type RealtimeConfig = {
   environment: 'local' | 'development' | 'production'
   authUrl: string
@@ -39,22 +29,18 @@ export type RealtimeConfig = {
   autosave: VerboseAutosave
 }
 
-const indexedAutosaveMap: { [key: string]: IndexedAutosave } = {}
-
-export const getIndexedAutosaveInstance = ({
-  storeNamePostfix,
-  disableWarning,
-}: {
+type VerboseAutosave = {
+  enabled: boolean
   storeNamePostfix: string
   disableWarning: boolean
-}) => {
-  if (!indexedAutosaveMap[storeNamePostfix]) {
-    indexedAutosaveMap[storeNamePostfix] = new IndexedAutosave({ storeNamePostfix, disableWarning })
-  }
-  return indexedAutosaveMap[storeNamePostfix]
 }
+type VerboseAutosaveOption = Partial<VerboseAutosave>
 
 export type AutosaveOption = boolean | VerboseAutosaveOption
+
+/**
+ * Get realtime config
+ */
 export const getRealtimeConfig = ({
   environment,
   logging,
@@ -76,25 +62,6 @@ export const getRealtimeConfig = ({
   const authUrl = authUrls[environment]
   const webSocketUrl = webSocketUrls[environment]
 
-  // Create autosave object
-  let autosaveObj: VerboseAutosave = {
-    enabled: false,
-    storeNamePostfix: 'default',
-    disableWarning: false,
-    getInitialData: undefined,
-  }
-  if (autosave && isMap(autosave)) {
-    const verboseAutosave = autosave as VerboseAutosaveOption
-    autosaveObj = {
-      enabled: verboseAutosave.enabled === undefined || verboseAutosave.enabled, // Default if autosave={} then it is enabled
-      storeNamePostfix: verboseAutosave.storeNamePostfix ?? autosaveObj.storeNamePostfix,
-      disableWarning: !!verboseAutosave?.disableWarning,
-      getInitialData: verboseAutosave?.getInitialData,
-    }
-  } else if (autosave) {
-    autosaveObj.enabled = true
-  }
-
   return {
     environment,
     authUrl,
@@ -106,6 +73,45 @@ export const getRealtimeConfig = ({
       localOperations: logging?.localOperations ?? false,
       remoteOperations: logging?.remoteOperations ?? false,
     },
-    autosave: autosaveObj,
+    autosave: getAutosaveConfig(autosave),
   }
+}
+
+/**
+ * Get autosave config
+ */
+export const getAutosaveConfig = (autosave?: AutosaveOption | VerboseAutosaveOption) => {
+  let autosaveObj: VerboseAutosave = {
+    enabled: false,
+    storeNamePostfix: 'default',
+    disableWarning: false,
+  }
+  if (autosave && isMap(autosave)) {
+    const verboseAutosave = autosave as VerboseAutosaveOption
+    autosaveObj = {
+      enabled: verboseAutosave.enabled === undefined || verboseAutosave.enabled, // Default if autosave={} then it is enabled
+      storeNamePostfix: verboseAutosave.storeNamePostfix ?? autosaveObj.storeNamePostfix,
+      disableWarning: !!verboseAutosave?.disableWarning,
+    }
+  } else if (autosave) {
+    autosaveObj.enabled = true
+  }
+  return autosaveObj
+}
+
+/**
+ * IndexedAutosave instances are cached here
+ */
+const indexedAutosaveMap: { [key: string]: IndexedAutosave } = {}
+export const getIndexedAutosaveInstance = ({
+  storeNamePostfix,
+  disableWarning,
+}: {
+  storeNamePostfix: string
+  disableWarning: boolean
+}) => {
+  if (!indexedAutosaveMap[storeNamePostfix]) {
+    indexedAutosaveMap[storeNamePostfix] = new IndexedAutosave({ storeNamePostfix, disableWarning })
+  }
+  return indexedAutosaveMap[storeNamePostfix]
 }
