@@ -14,7 +14,7 @@ import {
 } from '../../core'
 import { RealtimeWebSocketStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
-import { useAutosave } from './autosave/useAutosave'
+import { useDocumentAutosave } from './autosave/useDocumentAutosave'
 import { areStoresEqual } from './store/tests/storeEqual'
 import { DocumentPatch } from './store/types'
 import { useRealtimeStore } from './store/useRealtimeStore'
@@ -23,7 +23,7 @@ import { minifyOperations } from './store/utils/minifyOperations'
 import { createFragmentIdToPath } from './store/utils/pathUtils'
 import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtils'
 
-const OpsMessageType = 'ops'
+export const OpsMessageType = 'ops'
 const MaxOpsPerMessage = 30
 
 export enum DocumentStatus {
@@ -152,7 +152,7 @@ export const useDocumentChannel = <TRealtimeState>({
     updateLocalChanges,
     getLocalChangesToSync,
     acknowledgeLocalChange,
-  } = useAutosave({
+  } = useDocumentAutosave({
     config,
     documentId,
     localStore,
@@ -208,6 +208,10 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // On sync message
   const onSyncMessage = useCallback((fragment: Fragment) => {
+    // Get local changes. We must get them before setting root of local store
+    const localChanges = getLocalChangesToSync()
+
+    // Sync documents and fragments
     const document = fragmentToDocument({ fragment })
     const fragmentIdToPath = createFragmentIdToPath({ fragment })
     localStore.setRoot({ document, fragment, fragmentIdToPath: { ...fragmentIdToPath } })
@@ -222,7 +226,6 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     // Apply any local changes and send them to the channel
-    const localChanges = getLocalChangesToSync()
     if (localChanges.length > 0) {
       applyRemoteOperationsToStores(localChanges, [localStore])
       for (const request of localChanges) {
@@ -485,7 +488,7 @@ export const useDocumentChannel = <TRealtimeState>({
 
       // If autosave is disabled or editing is not ready, either remote or local, we reset the stores
       if (
-        !config.autosave ||
+        !config.autosave.enabled ||
         (editStatusRef.current !== DocumentEditStatus.Ready &&
           editStatusRef.current !== DocumentEditStatus.ReadyLocal)
       ) {

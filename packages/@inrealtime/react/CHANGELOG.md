@@ -1,5 +1,35 @@
 # @inrealtime/react
 
+## 0.1.11
+
+### Patch Changes
+
+- Fixes to connections. Redesigned autosave storing. Minor bug fixes.
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated JWT handling. Exposed some types.
+
+## 0.1.9
+
+### Patch Changes
+
+- Added error messages in auth in realtime
+
+## 0.1.8
+
+### Patch Changes
+
+- Updated how websockets live, specifically for iOS safari, updated ping pong strat
+
+## 0.1.7
+
+### Patch Changes
+
+- Autosave, grouping of messages, updated status hooks, realtime fixes
+
 ## 0.1.6
 
 ### Patch Changes

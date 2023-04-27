@@ -1,10 +1,15 @@
+import { getJwtPayload } from '../../auth/useAuth'
 import { RealtimeConfig } from '../../config'
 
-export type GetAuthToken = ({ documentId }: { documentId: string }) => string | Promise<string>
+export type GetRealtimeAuthToken = ({
+  documentId,
+}: {
+  documentId: string
+}) => string | Promise<string>
 
 export class RealtimeAuth {
   private readonly _config: RealtimeConfig
-  private readonly _getAuthToken?: GetAuthToken
+  private readonly _getAuthToken?: GetRealtimeAuthToken
   private readonly _publicAuthKey?: string
   constructor({
     config,
@@ -12,7 +17,7 @@ export class RealtimeAuth {
     publicAuthKey,
   }: {
     config: RealtimeConfig
-    getAuthToken?: GetAuthToken
+    getAuthToken?: GetRealtimeAuthToken
     publicAuthKey?: string
   }) {
     this._config = config
@@ -63,7 +68,7 @@ export class RealtimeAuth {
       throw new Error(`Either 'getAuthToken' or 'publicAuthKey' must be provided.`)
     }
 
-    const tokenPayload = JSON.parse(atob(token.split('.')[1]))
+    const tokenPayload = getJwtPayload(token)
     const projectId = tokenPayload.projectId
 
     return {

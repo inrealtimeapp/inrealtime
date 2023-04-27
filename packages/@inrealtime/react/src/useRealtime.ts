@@ -9,27 +9,28 @@ import {
 } from './channels/document/useDocument'
 import { PresenceStatus, usePresenceChannel } from './channels/presence/usePresence'
 import { useSystemChannel } from './channels/system/useSystem'
-import { getRealtimeConfig, RealtimeConfig } from './config'
-import { GetAuthToken } from './core'
+import { AutosaveOption, getRealtimeConfig, RealtimeConfig } from './config'
+import { GetRealtimeAuthToken } from './core'
 import { RealtimeWebSocketStatus } from './socket/types'
 import { useWebSocket } from './socket/useWebSocket'
 
-export type UseRealtimeOptions = {
-  documentId?: string
-  getAuthToken?: GetAuthToken
-  publicAuthKey?: string
-  autosave?: boolean
-  throttle?: number
-  _package?: {
-    environment?: 'local' | 'development' | 'production'
-    logging: {
-      conflicts?: boolean
-      socketStatus?: boolean
-      listFragmentIndexes?: boolean
-      localOperations?: boolean
-      remoteOperations?: boolean
-    }
+export type RealtimePackageOptions = {
+  environment?: 'local' | 'development' | 'production'
+  logging?: {
+    conflicts?: boolean
+    socketStatus?: boolean
+    listFragmentIndexes?: boolean
+    localOperations?: boolean
+    remoteOperations?: boolean
   }
+}
+export type RealtimeOptions = {
+  documentId?: string | undefined
+  getAuthToken?: GetRealtimeAuthToken | undefined
+  publicAuthKey?: string | undefined
+  autosave?: AutosaveOption | undefined
+  throttle?: number | undefined
+  _package?: RealtimePackageOptions | undefined
 }
 
 export enum RealtimeDocumentStatus {
@@ -69,7 +70,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   autosave,
   throttle,
   _package,
-}: UseRealtimeOptions) => {
+}: RealtimeOptions) => {
   const config: RealtimeConfig = useMemo(
     () =>
       getRealtimeConfig({
@@ -117,7 +118,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
   })
 
   // System channel
-  useSystemChannel({ webSocketStatus, useChannel })
+  useSystemChannel({ useChannel })
 
   // Presence channel
   const {
@@ -176,6 +177,8 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>({
       updatedConnectionStatus = RealtimeConnectionStatus.Subscribing
     }
 
+    // We may get that connection status is subscribing while realtime document status is ready even though autosave is off
+    // This is because if presence is not ready we keep it at subscribing
     if (
       updatedConnectionStatus === RealtimeConnectionStatus.Ready ||
       documentEditStatus === DocumentEditStatus.Ready ||

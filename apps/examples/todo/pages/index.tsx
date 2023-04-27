@@ -37,9 +37,8 @@ export default function Home() {
         label: workingTitle,
         isCompleted: false,
       })
-
-      setWorkingTitle('')
     })
+    setWorkingTitle('')
   }
 
   const onReorder = useCallback(

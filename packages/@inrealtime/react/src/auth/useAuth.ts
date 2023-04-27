@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { RealtimeConfig } from '../config'
-import { GetAuthToken, RealtimeAuth } from '../core'
+import { GetRealtimeAuthToken, RealtimeAuth } from '../core'
 
 // The initial wait time for re-trying on errors in milliseconds
 const AuthenticationErrorExponentialTimerStart = 1000
@@ -10,11 +10,11 @@ const AuthenticationErrorExponentialTimerStart = 1000
 const AuthenticationErrorExponentialTimerMax = 8000
 
 // The number of ms remaining until token expiry when we start re-authenticating
-const ReAuthenticationTimeBeforeTokenExpiry = 2 * 60 * 1000 // 2 minutes
+const ReAuthenticationTimeBeforeTokenExpiry = 2.5 * 60 * 1000 // 2.5 minutes
 
 type AuthOptions = {
   documentId?: string
-  getAuthToken?: GetAuthToken
+  getAuthToken?: GetRealtimeAuthToken
   publicAuthKey?: string
   config: RealtimeConfig
 }
@@ -33,6 +33,20 @@ enum AuthenticationStatus {
   Error = 'Error',
 }
 
+export const getJwtPayload = (token: string) => {
+  const base64Url = token.split('.')[1]
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      })
+      .join(''),
+  )
+  return JSON.parse(jsonPayload)
+}
+
 const authenticateFn = async ({
   realtimeAuth,
   documentId,
@@ -41,7 +55,8 @@ const authenticateFn = async ({
   documentId: string
 }) => {
   const { socketUrl, token, projectId } = await realtimeAuth.auth({ documentId })
-  const tokenPayload = JSON.parse(atob(token.split('.')[1]))
+  const tokenPayload = getJwtPayload(token)
+
   const tokenExpiryTime: number = tokenPayload.exp
   return { socketUrl, token, tokenExpiryTime, projectId }
 }
@@ -99,7 +114,7 @@ export const useAuth = ({
         authData.tokenExpiryTime! - Date.now() / 1000 - ReAuthenticationTimeBeforeTokenExpiry / 1000
       if (diff < 0) {
         setStatus(AuthenticationStatus.Authenticating)
-        if (config.logging.socketStatus) console.log("Auth status' -> Authenticating")
+        if (config.logging.socketStatus) console.log('Auth status -> Authenticating')
       }
     }, 5000)
     return () => {

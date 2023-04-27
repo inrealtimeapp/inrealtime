@@ -276,7 +276,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
     presenceStore.reset()
     setPresenceClientId(undefined as any)
     preSyncMessagesRef.current = []
-  }, [collaboratorStore.patch, presenceStore.patch])
+  }, [])
 
   // Initial sync
   useEffect(() => {

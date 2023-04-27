@@ -42,30 +42,8 @@ export const useWebSocket = ({
   const messageStoreRef = useRef<MessageStore>(createMessageStore())
   const authChannelPrefix = 'auth'
 
-  const webSocket = useMemo(
-    () =>
-      new RealtimeWebSocket({
-        onOpen: () => {
-          if (config.logging.socketStatus) console.log('Socket status -> Authenticating')
-          setSocketStatus(RealtimeWebSocketStatus.Authenticating)
-          socketStatusRef.current = RealtimeWebSocketStatus.Authenticating
-        },
-        onConnecting: () => {
-          if (config.logging.socketStatus) console.log('Socket status -> Connecting')
-          setSocketStatus(RealtimeWebSocketStatus.Connecting)
-          socketStatusRef.current = RealtimeWebSocketStatus.Connecting
-        },
-        onClose: () => {
-          if (config.logging.socketStatus) console.log('Socket status -> Closed')
-          setSocketStatus(RealtimeWebSocketStatus.Closed)
-          socketStatusRef.current = RealtimeWebSocketStatus.Closed
-        },
-        onMessage: (channel, message) => {
-          messageStoreRef.current.registerMessage(channel, message)
-        },
-      }),
-    [],
-  )
+  const realtimeWebSocketRef = useRef<RealtimeWebSocket>()
+  const [reconnectCounter, setReconnectCounter] = useState<number>(0)
 
   // Create onChannel hook
   const useChannel = useMemo(
@@ -82,37 +60,86 @@ export const useWebSocket = ({
         groupMessagesOnSend?: (messages: RealtimeMessage[]) => RealtimeMessage[]
       }) =>
         useRawChannel({
-          realtimeWebSocket: webSocket,
-          messageStoreRef: messageStoreRef,
+          realtimeWebSocketRef,
+          messageStoreRef,
           channel,
           onMessage,
           throttle,
           groupMessagesOnSend,
         }),
-    [webSocket],
+    [],
   )
+
+  const newRealtimeWebSocket = useCallback(() => {
+    const realtimeWebSocket = new RealtimeWebSocket({
+      onOpen: () => {
+        if (realtimeWebSocketRef.current !== realtimeWebSocket) {
+          return
+        }
+
+        if (config.logging.socketStatus) console.log('Socket status -> Authenticating')
+        setSocketStatus(RealtimeWebSocketStatus.Authenticating)
+        socketStatusRef.current = RealtimeWebSocketStatus.Authenticating
+      },
+      onConnecting: () => {
+        if (realtimeWebSocketRef.current !== realtimeWebSocket) {
+          return
+        }
+
+        if (config.logging.socketStatus) console.log('Socket status -> Connecting')
+        setSocketStatus(RealtimeWebSocketStatus.Connecting)
+        socketStatusRef.current = RealtimeWebSocketStatus.Connecting
+      },
+      onClose: () => {
+        if (realtimeWebSocketRef.current !== realtimeWebSocket) {
+          return
+        }
+
+        if (config.logging.socketStatus) console.log('Socket status -> Closed')
+        setSocketStatus(RealtimeWebSocketStatus.Closed)
+        socketStatusRef.current = RealtimeWebSocketStatus.Closed
+        setLastToken(undefined as any)
+      },
+      onMessage: (channel, message) => {
+        if (realtimeWebSocketRef.current !== realtimeWebSocket) {
+          return
+        }
+
+        messageStoreRef.current.registerMessage(channel, message)
+      },
+      config,
+    })
+
+    return realtimeWebSocket
+  }, [])
+
+  // Try reconnections
+  useEffect(() => {
+    if (socketStatus !== RealtimeWebSocketStatus.Closed) {
+      return
+    }
+    const interval = setInterval(() => {
+      setReconnectCounter(reconnectCounter + 1)
+    }, 500)
+    return () => clearInterval(interval)
+  }, [socketStatus, reconnectCounter])
 
   // Connect and re-connections
   useEffect(() => {
-    if (!socketUrl && socketStatus !== RealtimeWebSocketStatus.Closed) {
-      if (config.logging.socketStatus) console.log('Socket status -> Closing')
-      setSocketStatus(RealtimeWebSocketStatus.Closed)
-      socketStatusRef.current = RealtimeWebSocketStatus.Closed
-      webSocket.close()
-      return
-    }
-
     if (!socketUrl) {
       return
     }
 
-    if (socketStatus !== RealtimeWebSocketStatus.Closed) {
-      return
+    const realtimeWebSocket = newRealtimeWebSocket()
+    realtimeWebSocketRef.current = realtimeWebSocket
+    realtimeWebSocket.setSocketUrl({ socketUrl })
+    realtimeWebSocket.connect()
+    return () => {
+      if (config.logging.socketStatus)
+        console.log('Closing due to change in socketUrl, reconnect or hot-reload')
+      realtimeWebSocket.close()
     }
-
-    webSocket.setSocketUrl({ socketUrl })
-    webSocket.connect()
-  }, [socketUrl, socketStatus])
+  }, [socketUrl, reconnectCounter])
 
   // Hook to retrieve auth messages
   const { sendMessage: sendAuthMessage } = useChannel({
@@ -151,25 +178,18 @@ export const useWebSocket = ({
     sendAuthMessage({ type: 'token', messageId: uniqueId(), token })
   }, [sendAuthMessage, socketStatus, token, lastToken])
 
-  useEffect(() => {
-    return () => {
-      if (config.logging.socketStatus) console.log('Socket -> Closing on dismount')
-      webSocket.close()
-    }
-  }, [webSocket])
-
   return { status: socketStatus, statusRef: socketStatusRef, useChannel }
 }
 
 const useRawChannel = ({
-  realtimeWebSocket,
+  realtimeWebSocketRef,
   messageStoreRef,
   channel,
   onMessage,
   throttle,
   groupMessagesOnSend,
 }: {
-  realtimeWebSocket: RealtimeWebSocket
+  realtimeWebSocketRef: MutableRefObject<RealtimeWebSocket>
   messageStoreRef: MutableRefObject<MessageStore>
   channel: string
   onMessage: (message: RealtimeMessage) => void
@@ -203,10 +223,10 @@ const useRawChannel = ({
         return
       }
       messageQueueRef.current = []
-      messages.forEach((message) => realtimeWebSocket.sendMessage(channel, message))
+      messages.forEach((message) => realtimeWebSocketRef.current.sendMessage(channel, message))
     }, throttle)
     return () => clearInterval(sendMessagesInterval.current!)
-  }, [throttle, channel, realtimeWebSocket, groupMessagesOnSend])
+  }, [throttle, channel, groupMessagesOnSend])
 
   const sendMessageCallback = useCallback((message: RealtimeMessage) => {
     messageQueueRef.current.push(message)
