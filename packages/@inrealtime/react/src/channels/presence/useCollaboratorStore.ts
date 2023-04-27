@@ -22,6 +22,7 @@ export const useCollaboratorStore = <
         data: [],
         patch: (fn: CollaboratorPatch<TRealtimePresenceData>) => {
           set({
+            initial: false,
             data: [...fn({ presences: get().data })], // Create new list for selector
           })
         },

@@ -10,7 +10,7 @@ const AuthenticationErrorExponentialTimerStart = 1000
 const AuthenticationErrorExponentialTimerMax = 8000
 
 // The number of ms remaining until token expiry when we start re-authenticating
-const ReAuthenticationTimeBeforeTokenExpiry = 2 * 60 * 1000 // 2 minutes
+const ReAuthenticationTimeBeforeTokenExpiry = 2.5 * 60 * 1000 // 2.5 minutes
 
 type AuthOptions = {
   documentId?: string
@@ -114,7 +114,7 @@ export const useAuth = ({
         authData.tokenExpiryTime! - Date.now() / 1000 - ReAuthenticationTimeBeforeTokenExpiry / 1000
       if (diff < 0) {
         setStatus(AuthenticationStatus.Authenticating)
-        if (config.logging.socketStatus) console.log("Auth status' -> Authenticating")
+        if (config.logging.socketStatus) console.log('Auth status -> Authenticating')
       }
     }, 5000)
     return () => {
