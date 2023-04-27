@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.1.11
+
+### Patch Changes
+
+- Fixes to connections. Redesigned autosave storing. Minor bug fixes.
+
 ## 0.1.10
 
 ### Patch Changes
