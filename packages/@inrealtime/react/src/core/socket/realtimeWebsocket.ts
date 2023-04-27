@@ -48,7 +48,6 @@ export class RealtimeWebSocket {
 
   sendMessage(channel: string, message: RealtimeMessage) {
     if (this._webSocket?.readyState !== WebSocket.OPEN) {
-      this.close()
       return
     }
 
@@ -68,8 +67,14 @@ export class RealtimeWebSocket {
     if (!webSocket) {
       return
     }
+
+    // We need to do this automatically to avoid for waiting for close of websocket below
+    if (this._onClose) {
+      this._onClose()
+    }
+
     try {
-      webSocket.close()
+      webSocket.close(1000, 'Closing socket manually')
     } catch (e) {
       console.error(e)
     }
@@ -80,12 +85,14 @@ export class RealtimeWebSocket {
       throw new Error('Missing socket url.')
     }
 
-    this._close(this._webSocket)
     const webSocket = new WebSocket(this._socketUrl)
+    this._webSocket = webSocket
+
     this._lastReceivedMessage = new Date()
     this._timeoutTimer = setInterval(() => {
       const now = new Date()
       if (now.getTime() - this._lastReceivedMessage!.getTime() > socketTimeout) {
+        if (this._config?.logging.socketStatus) console.log(`Closing socket in timeout timer`)
         this._close(webSocket)
       }
     }, socketTimeout / 2)
@@ -100,7 +107,7 @@ export class RealtimeWebSocket {
       if (this._onClose) {
         this._onClose()
       }
-      if (e.code === 3000) {
+      if (e && e.code === 3000) {
         console.warn(
           `Socket closed with code '${e.code}', type '${e.type}' and reason '${e.reason}'.`,
         )
@@ -112,6 +119,7 @@ export class RealtimeWebSocket {
     }
 
     webSocket.onerror = () => {
+      if (this._config?.logging.socketStatus) console.log(`Closing socket in onError`)
       this._close(webSocket)
     }
 
@@ -150,8 +158,6 @@ export class RealtimeWebSocket {
       //console.log(`Received message on channel '${channel}' and type '${message.type}'`)
       this._onMessage(channel, message)
     }
-
-    this._webSocket = webSocket
 
     if (this._onConnecting) {
       this._onConnecting()
