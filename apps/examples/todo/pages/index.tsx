@@ -10,7 +10,7 @@ import { RealtimeDocumentProvider } from '@/realtime.config'
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  const [startOfHour, setStartOfHour] = useState('123')
+  const [startOfHour, setStartOfHour] = useState('55555')
   const { createNewDocument } = useAutosave({ storeNamePostfix: 'test', disableWarning: true })
   //const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
 
@@ -47,7 +47,7 @@ export default function Home() {
       <RealtimeDocumentProvider documentId={startOfHour}>
         <Todo />
       </RealtimeDocumentProvider>
-      <RealtimeDocumentProvider documentId={'1234'}>
+      <RealtimeDocumentProvider documentId={'6713'}>
         <Todo />
       </RealtimeDocumentProvider>
     </div>

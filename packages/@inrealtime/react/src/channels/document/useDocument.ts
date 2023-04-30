@@ -7,8 +7,7 @@ import {
   DocumentOperationsRequest,
   DocumentOperationsResponse,
   Fragment,
-  FragmentTypeList,
-  FragmentTypeMap,
+  FragmentType,
   RealtimeMessage,
   uniqueId,
 } from '../../core'
@@ -181,7 +180,7 @@ export const useDocumentChannel = <TRealtimeState>({
       if (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready) {
         return
       }
-      if (fragment.type !== FragmentTypeList && fragment.type !== FragmentTypeMap) {
+      if (fragment.type !== FragmentType.List && fragment.type !== FragmentType.Map) {
         return
       }
 
@@ -523,7 +522,7 @@ export const useDocumentChannel = <TRealtimeState>({
   }, [])
 
   // On websocket changes
-  // Here we handle initial subscriptions and websocket diconnections
+  // Here we handle initial subscriptions and websocket disconnections
   useEffect(() => {
     if (connectionStatus !== RealtimeConnectionStatus.Open) {
       setSubscriptionStatus(DocumentSubscriptionStatus.Unready)
@@ -561,7 +560,7 @@ export const useDocumentChannel = <TRealtimeState>({
     }
   }, [connectionStatus])
 
-  // Reset stores on document change. Also possibly resucbscribe
+  // Reset stores on document change. Also, possibly re-subscriptions
   useEffect(() => {
     if (subscriptionIdRef.current) {
       sendMessage({

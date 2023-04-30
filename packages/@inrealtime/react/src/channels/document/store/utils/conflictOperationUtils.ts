@@ -4,8 +4,7 @@ import { RealtimeConfig } from '../../../../config'
 import {
   Fragment,
   FragmentMap,
-  FragmentTypeList,
-  FragmentTypeMap,
+  FragmentType,
   listsShallowEqual,
   listsShallowStartsWith,
 } from '../../../../core'
@@ -76,7 +75,7 @@ const _replaceConflictWithTruth = <TRealtimeState>({
   })
 
   // Parent is lists
-  if (parentFragment.type === FragmentTypeList) {
+  if (parentFragment.type === FragmentType.List) {
     // Insert truth document
     // Note that we want to use the previous index here. This is because we don't want to modify the new or old fragment.
     // If there were any index changes, this will be resolved as the parent should also be affected
@@ -85,7 +84,7 @@ const _replaceConflictWithTruth = <TRealtimeState>({
     return
   }
 
-  if (parentFragment.type === FragmentTypeMap) {
+  if (parentFragment.type === FragmentType.Map) {
     // Insert the truth document
     parentDocument[conflictFragment.parentMapKey!] = truthDocument
   }
@@ -176,7 +175,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
         continue
       }
 
-      if (truthFragment.type === FragmentTypeMap && conflictFragment.type === FragmentTypeMap) {
+      if (truthFragment.type === FragmentType.Map && conflictFragment.type === FragmentType.Map) {
         // We need to check whether the sub fragment id's of the inserted fragment are the same
         // If not, we need to replace the map
         const fragmentKeys = Object.keys(conflictFragment.value)
@@ -214,7 +213,7 @@ export const resolveConflictsInStore = <TRealtimeState>({
       }
 
       // Resolve conflict for all objects other than map and list
-      if (truthFragment.type !== FragmentTypeList || conflictFragment.type !== FragmentTypeList) {
+      if (truthFragment.type !== FragmentType.List || conflictFragment.type !== FragmentType.List) {
         // No conflict
         if (truthDocument === conflictDocument) {
           continue
