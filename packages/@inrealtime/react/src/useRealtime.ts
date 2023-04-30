@@ -1,12 +1,13 @@
-import { RealtimeConnectionOptions } from './types'
+import { RealtimeSingleConnectionOptions } from './types'
 import { useRealtimeConnection } from './useRealtimeConnection'
 import { useRealtimeDocument } from './useRealtimeDocument'
 
 export const useRealtime = <TRealtimeState, TRealtimePresenceData>(
-  options: RealtimeConnectionOptions,
+  options: RealtimeSingleConnectionOptions,
 ) => {
   const {
     connectionStatus,
+    connectionStatusRef,
     presenceStatus,
     config,
     useChannel,
@@ -21,6 +22,7 @@ export const useRealtime = <TRealtimeState, TRealtimePresenceData>(
   const { documentStatus, useStore, patch, subscribe } = useRealtimeDocument<TRealtimeState>({
     config,
     connectionStatus,
+    connectionStatusRef,
     useChannel,
     documentId: options.documentId,
     throttle: options.throttle,

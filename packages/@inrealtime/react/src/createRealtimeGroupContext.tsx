@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { MutableRefObject } from 'react'
 
 import { Patch, Subscribe, UseStore } from './channels/document/store/types'
 import {
@@ -11,19 +11,17 @@ import {
   UseMe,
 } from './channels/presence/types'
 import { RealtimePresenceStatus } from './channels/presence/usePresence'
+import { RealtimeConfig } from './config'
 import { PresenceClient } from './core'
 import { RealtimeConnectionStatus } from './socket/types'
-import { RealtimeSingleConnectionOptions } from './types'
-import { useRealtime } from './useRealtime'
-import { RealtimeDocumentStatus } from './useRealtimeDocument'
+import { UseChannel } from './socket/useWebSocket'
+import { RealtimeGroupConnectionOptions } from './types'
+import { useRealtimeConnection } from './useRealtimeConnection'
+import { RealtimeDocumentStatus, useRealtimeDocument } from './useRealtimeDocument'
 
-export type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
+export type RealtimeGroupContextProps<TRealtimePresenceData> = {
   connectionStatus: RealtimeConnectionStatus
   presenceStatus: RealtimePresenceStatus
-  documentStatus: RealtimeDocumentStatus
-  useStore: UseStore<TRealtimeState>
-  patch: Patch<TRealtimeState>
-  subscribe: Subscribe<TRealtimeState>
   useCollaborators: UseCollaborators<TRealtimePresenceData>
   subscribeCollaborators: SubscribeCollaborators<TRealtimePresenceData>
   useMe: UseMe<TRealtimePresenceData>
@@ -31,15 +29,34 @@ export type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
   subscribeMe: SubscribeMe<TRealtimePresenceData>
   broadcast: Broadcast
   useBroadcastListener: UseBroadcastListener
+  _package: {
+    config: RealtimeConfig
+    useChannel: UseChannel
+    connectionStatusRef: MutableRefObject<RealtimeConnectionStatus>
+  }
 }
 
-type RealtimeProviderProps = {
+export type RealtimeDocumentContextProps<TRealtimeState> = {
+  documentStatus: RealtimeDocumentStatus
+  useStore: UseStore<TRealtimeState>
+  patch: Patch<TRealtimeState>
+  subscribe: Subscribe<TRealtimeState>
+}
+
+type RealtimeGroupProviderProps = {
   children: React.ReactNode
-} & RealtimeSingleConnectionOptions
+} & RealtimeGroupConnectionOptions
+
+type RealtimeDocumentProviderProps = {
+  children: React.ReactNode
+  documentId?: string | undefined
+}
 
 type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
-  RealtimeProvider(props: RealtimeProviderProps): JSX.Element
-  useRealtimeContext(): RealtimeContextProps<TRealtimeState, TRealtimePresenceData>
+  RealtimeGroupProvider(props: RealtimeGroupProviderProps): JSX.Element
+  RealtimeDocumentProvider(props: RealtimeDocumentProviderProps): JSX.Element
+  useRealtimeGroupContext(): RealtimeGroupContextProps<TRealtimePresenceData>
+  useRealtimeDocumentContext(): RealtimeDocumentContextProps<TRealtimeState>
   useConnectionStatus(): RealtimeConnectionStatus
   usePresenceStatus(): RealtimePresenceStatus
   useDocumentStatus(): RealtimeDocumentStatus
@@ -55,30 +72,30 @@ type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
   useBroadcastListener: UseBroadcastListener
 }
 
-export const createRealtimeContext = <
+export const createRealtimeGroupContext = <
   TRealtimeState,
   TRealtimePresenceData,
 >(): RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> => {
-  const RealtimeContext = React.createContext<Partial<
-    RealtimeContextProps<TRealtimeState, TRealtimePresenceData>
+  const RealtimeGroupContext = React.createContext<Partial<
+    RealtimeGroupContextProps<TRealtimePresenceData>
+  > | null>(null)
+  const RealtimeDocumentContext = React.createContext<Partial<
+    RealtimeDocumentContextProps<TRealtimeState>
   > | null>(null)
 
-  const RealtimeProvider = ({
+  const RealtimeGroupProvider = ({
     children,
-    documentId,
+    groupId,
     getAuthToken,
     publicAuthKey,
     autosave,
     throttle,
     _package,
-  }: RealtimeProviderProps) => {
+  }: RealtimeGroupProviderProps) => {
     const {
       connectionStatus,
+      connectionStatusRef,
       presenceStatus,
-      documentStatus,
-      useStore,
-      patch,
-      subscribe,
       useCollaborators,
       subscribeCollaborators,
       useMe,
@@ -86,8 +103,10 @@ export const createRealtimeContext = <
       subscribeMe,
       broadcast,
       useBroadcastListener,
-    } = useRealtime<TRealtimeState, TRealtimePresenceData>({
-      documentId,
+      config,
+      useChannel,
+    } = useRealtimeConnection<TRealtimePresenceData>({
+      groupId,
       getAuthToken,
       publicAuthKey,
       autosave,
@@ -96,14 +115,10 @@ export const createRealtimeContext = <
     })
 
     return (
-      <RealtimeContext.Provider
+      <RealtimeGroupContext.Provider
         value={{
           connectionStatus,
-          documentStatus,
           presenceStatus,
-          useStore,
-          patch,
-          subscribe,
           useCollaborators,
           subscribeCollaborators,
           useMe,
@@ -111,22 +126,56 @@ export const createRealtimeContext = <
           subscribeMe,
           broadcast,
           useBroadcastListener,
+          _package: {
+            config,
+            useChannel,
+            connectionStatusRef,
+          },
         }}
       >
         {children}
-      </RealtimeContext.Provider>
+      </RealtimeGroupContext.Provider>
     )
   }
 
-  const useRealtimeContext = () => {
-    return React.useContext(RealtimeContext) as RealtimeContextProps<
-      TRealtimeState,
-      TRealtimePresenceData
-    >
+  const useRealtimeGroupContext = () => {
+    return React.useContext(
+      RealtimeGroupContext,
+    ) as RealtimeGroupContextProps<TRealtimePresenceData>
+  }
+
+  const RealtimeDocumentProvider = ({ children, documentId }: RealtimeDocumentProviderProps) => {
+    const { connectionStatus, _package } = useRealtimeGroupContext()
+    if (_package === null) {
+      throw new Error('No RealtimeGroupProvider provided')
+    }
+
+    const { documentStatus, useStore, patch, subscribe } = useRealtimeDocument<TRealtimeState>({
+      connectionStatus,
+      documentId,
+      ..._package,
+    })
+
+    return (
+      <RealtimeDocumentContext.Provider
+        value={{
+          documentStatus,
+          useStore,
+          patch,
+          subscribe,
+        }}
+      >
+        {children}
+      </RealtimeDocumentContext.Provider>
+    )
+  }
+
+  const useRealtimeDocumentContext = () => {
+    return React.useContext(RealtimeDocumentContext) as RealtimeDocumentContextProps<TRealtimeState>
   }
 
   const useConnectionStatus = () => {
-    const { connectionStatus } = useRealtimeContext()
+    const { connectionStatus } = useRealtimeGroupContext()
 
     if (connectionStatus === null) {
       throw new Error('No RealtimeProvider provided')
@@ -136,7 +185,7 @@ export const createRealtimeContext = <
   }
 
   const usePresenceStatus = () => {
-    const { presenceStatus } = useRealtimeContext()
+    const { presenceStatus } = useRealtimeGroupContext()
 
     if (presenceStatus === null) {
       throw new Error('No RealtimeProvider provided')
@@ -146,7 +195,7 @@ export const createRealtimeContext = <
   }
 
   const useDocumentStatus = () => {
-    const { documentStatus } = useRealtimeContext()
+    const { documentStatus } = useRealtimeDocumentContext()
 
     if (documentStatus === null) {
       throw new Error('No RealtimeProvider provided')
@@ -159,7 +208,7 @@ export const createRealtimeContext = <
     selector?: (root: TRealtimeState) => any,
     equalityFn?: ((a: any, b: any) => boolean) | undefined,
   ) => {
-    const { useStore } = useRealtimeContext()
+    const { useStore } = useRealtimeDocumentContext()
 
     if (useStore === null) {
       throw new Error('No RealtimeProvider provided')
@@ -169,7 +218,7 @@ export const createRealtimeContext = <
   }
 
   const usePatch = (): Patch<TRealtimeState> => {
-    const { patch } = useRealtimeContext()
+    const { patch } = useRealtimeDocumentContext()
 
     if (patch === null) {
       throw new Error('No RealtimeProvider provided')
@@ -179,7 +228,7 @@ export const createRealtimeContext = <
   }
 
   const useSubscribe = (): Subscribe<TRealtimeState> => {
-    const { subscribe } = useRealtimeContext()
+    const { subscribe } = useRealtimeDocumentContext()
 
     if (subscribe === null) {
       throw new Error('No RealtimeProvider provided')
@@ -192,7 +241,7 @@ export const createRealtimeContext = <
     selector?: (root: PresenceClient<TRealtimePresenceData>[]) => any,
     equalityFn?: (a: any, b: any) => boolean,
   ) => {
-    const { useCollaborators } = useRealtimeContext()
+    const { useCollaborators } = useRealtimeGroupContext()
 
     if (useCollaborators === null) {
       throw new Error('No RealtimeProvider provided')
@@ -202,7 +251,7 @@ export const createRealtimeContext = <
   }
 
   const useSubscribeCollaborators = (): SubscribeCollaborators<TRealtimePresenceData> => {
-    const { subscribeCollaborators } = useRealtimeContext()
+    const { subscribeCollaborators } = useRealtimeGroupContext()
 
     if (subscribeCollaborators === null) {
       throw new Error('No RealtimeProvider provided')
@@ -215,7 +264,7 @@ export const createRealtimeContext = <
     selector?: (root: PresenceClient<TRealtimePresenceData>) => any,
     equalityFn?: (a: any, b: any) => boolean,
   ) => {
-    const { useMe } = useRealtimeContext()
+    const { useMe } = useRealtimeGroupContext()
 
     if (useMe === null) {
       throw new Error('No RealtimeProvider provided')
@@ -225,7 +274,7 @@ export const createRealtimeContext = <
   }
 
   const usePatchMe = (): PatchMe<TRealtimePresenceData> => {
-    const { patchMe } = useRealtimeContext()
+    const { patchMe } = useRealtimeGroupContext()
 
     if (patchMe === null) {
       throw new Error('No RealtimeProvider provided')
@@ -235,7 +284,7 @@ export const createRealtimeContext = <
   }
 
   const useSubscribeMe = (): SubscribeMe<TRealtimePresenceData> => {
-    const { subscribeMe } = useRealtimeContext()
+    const { subscribeMe } = useRealtimeGroupContext()
 
     if (subscribeMe === null) {
       throw new Error('No RealtimeProvider provided')
@@ -245,7 +294,7 @@ export const createRealtimeContext = <
   }
 
   const useBroadcast = (): Broadcast => {
-    const { broadcast } = useRealtimeContext()
+    const { broadcast } = useRealtimeGroupContext()
 
     if (broadcast === null) {
       throw new Error('No RealtimeProvider provided')
@@ -255,7 +304,7 @@ export const createRealtimeContext = <
   }
 
   const useBroadcastListener: UseBroadcastListener = (onEvent) => {
-    const { useBroadcastListener } = useRealtimeContext()
+    const { useBroadcastListener } = useRealtimeGroupContext()
 
     if (useBroadcastListener === null) {
       throw new Error('No RealtimeProvider provided')
@@ -265,8 +314,10 @@ export const createRealtimeContext = <
   }
 
   return {
-    RealtimeProvider,
-    useRealtimeContext,
+    RealtimeGroupProvider,
+    RealtimeDocumentProvider,
+    useRealtimeGroupContext,
+    useRealtimeDocumentContext,
     useConnectionStatus,
     usePresenceStatus,
     useDocumentStatus,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RealtimeConfig } from '../../config'
 import {
@@ -41,18 +41,21 @@ export enum DocumentAvailabilityStatus {
 export const useDocumentChannel = <TRealtimeState>({
   config,
   connectionStatus,
+  connectionStatusRef,
   useChannel,
   documentId,
   throttle: requestedThrottle,
 }: {
   config: RealtimeConfig
   connectionStatus: RealtimeConnectionStatus
+  connectionStatusRef: MutableRefObject<RealtimeConnectionStatus>
   useChannel: UseChannel
   documentId?: string
   throttle: number
 }) => {
-  const [subscriptionStatus, setSubscriptionSubscriptionStatus] =
-    useState<DocumentSubscriptionStatus>(DocumentSubscriptionStatus.Unready)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<DocumentSubscriptionStatus>(
+    DocumentSubscriptionStatus.Unready,
+  )
   const subscriptionStatusRef = useRef<DocumentSubscriptionStatus>(
     DocumentSubscriptionStatus.Unready,
   )
@@ -79,6 +82,10 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // Save local changes ref
   const saveLocalChangesRef = useRef<(request: DocumentOperationsRequest) => void>()
+
+  // The subscription id and document id we are currently subscribed to
+  const subscriptionIdRef = useRef<string>()
+  const subscribedToDocumentIdRef = useRef<string>()
 
   useEffect(() => {
     documentIdRef.current = documentId
@@ -131,7 +138,7 @@ export const useDocumentChannel = <TRealtimeState>({
 
     const request: DocumentOperationsRequest = {
       messageId: uniqueId(),
-      documentId: documentIdRef.current!,
+      subId: subscriptionIdRef.current!,
       type: OpsMessageType,
       operations: requests,
     }
@@ -168,6 +175,7 @@ export const useDocumentChannel = <TRealtimeState>({
   } = useDocumentAutosave({
     config,
     documentId,
+    subscriptionIdRef,
     localStore,
     onLocalData: useCallback((fragment) => {
       if (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready) {
@@ -246,7 +254,7 @@ export const useDocumentChannel = <TRealtimeState>({
       }
     }
 
-    setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Ready)
+    setSubscriptionStatus(DocumentSubscriptionStatus.Ready)
     setAvailabilityStatus(DocumentAvailabilityStatus.Ready)
     subscriptionStatusRef.current = DocumentSubscriptionStatus.Ready
     availabilityStatusRef.current = DocumentAvailabilityStatus.Ready
@@ -379,15 +387,44 @@ export const useDocumentChannel = <TRealtimeState>({
   // On document message
   const onDocumentMessage = useCallback(
     (message: RealtimeMessage) => {
+      if (message.docId !== documentIdRef.current) {
+        return
+      }
+
       switch (message.type) {
         case 'sync':
-          onSyncMessage(message.document)
+          {
+            // Make sure that the sync message is for the current subscription
+            if (subscriptionIdRef.current !== message.subId) {
+              return
+            }
+
+            onSyncMessage(message.document)
+          }
           break
         case 'ack':
-          onAckMessage(message as DocumentOperationAckResponse)
+          {
+            const ackMessage = message as DocumentOperationAckResponse
+
+            // Make sure that the ack message is for the current subscription
+            if (subscriptionIdRef.current !== ackMessage.subId) {
+              return
+            }
+
+            onAckMessage(ackMessage)
+          }
           break
         case 'ops':
-          onOpsMessage(message as DocumentOperationsResponse)
+          {
+            const documentOpsMessage = message as DocumentOperationsResponse
+
+            // If we have more than 1 subscription to the same document we need to ignore messages that the current subscription sent
+            if (subscriptionIdRef.current === documentOpsMessage.clientSubId) {
+              return
+            }
+
+            onOpsMessage(documentOpsMessage)
+          }
           break
         default:
           console.warn(`Document message with type '${message.type}' unhandled.`)
@@ -440,8 +477,8 @@ export const useDocumentChannel = <TRealtimeState>({
       const chunk = minifiedOperations.slice(i, i + MaxOpsPerMessage)
       groupedMessages.push({
         messageId: uniqueId(),
-        documentId: documentIdRef.current!,
         type: OpsMessageType,
+        subId: subscriptionIdRef.current!,
         operations: chunk,
       })
     }
@@ -477,37 +514,22 @@ export const useDocumentChannel = <TRealtimeState>({
     sendMessageRef.current = sendMessage
   }, [sendMessage])
 
-  // Reset stores on document change
-  useEffect(() => {
-    conflictsIdsRef.current = []
-    unackedOperationsRef.current = []
-    localStore.setRoot({
-      document: undefined as any,
-      fragment: undefined as any,
-      fragmentIdToPath: undefined as any,
-    })
-    remoteStore.setRoot({
-      document: undefined as any,
-      fragment: undefined as any,
-      fragmentIdToPath: undefined as any,
-    })
-  }, [documentId])
+  const isOfflineCapable = useCallback(() => {
+    return (
+      config.autosave.enabled &&
+      (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready ||
+        availabilityStatusRef.current === DocumentAvailabilityStatus.ReadyLocal)
+    )
+  }, [])
 
   // On websocket changes
-  // Here we handle initial subscriptions, disconnections and re-subscriptions
+  // Here we handle initial subscriptions and websocket diconnections
   useEffect(() => {
-    preSyncReceivedOperationsRef.current = []
-
     if (connectionStatus !== RealtimeConnectionStatus.Open) {
-      setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Unready)
+      setSubscriptionStatus(DocumentSubscriptionStatus.Unready)
       subscriptionStatusRef.current = DocumentSubscriptionStatus.Unready
 
-      // If autosave is disabled or editing is not ready, either remote or local, we reset the stores
-      if (
-        !config.autosave.enabled ||
-        (availabilityStatusRef.current !== DocumentAvailabilityStatus.Ready &&
-          availabilityStatusRef.current !== DocumentAvailabilityStatus.ReadyLocal)
-      ) {
+      if (!isOfflineCapable()) {
         conflictsIdsRef.current = []
         unackedOperationsRef.current = []
         localStore.setRoot({
@@ -520,24 +542,79 @@ export const useDocumentChannel = <TRealtimeState>({
           fragment: undefined as any,
           fragmentIdToPath: undefined as any,
         })
-
         setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
         availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
       } else {
         setAvailabilityStatus(DocumentAvailabilityStatus.ReadyLocal)
         availabilityStatusRef.current = DocumentAvailabilityStatus.ReadyLocal
       }
+
       return
     }
 
-    setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
+    setSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
     subscriptionStatusRef.current = DocumentSubscriptionStatus.Subscribing
+    return () => {
+      // If connection changes we automatically unsubscribe
+      subscriptionIdRef.current = undefined as any
+      subscribedToDocumentIdRef.current = undefined as any
+    }
+  }, [connectionStatus])
+
+  // Reset stores on document change. Also possibly resucbscribe
+  useEffect(() => {
+    if (subscriptionIdRef.current) {
+      sendMessage({
+        messageId: uniqueId(),
+        type: 'unsubscribe',
+        subId: subscriptionIdRef.current,
+      })
+    }
+
+    conflictsIdsRef.current = []
+    unackedOperationsRef.current = []
+    localStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+    remoteStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+    setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
+    availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
+    subscriptionIdRef.current = undefined as any
+    subscribedToDocumentIdRef.current = undefined as any
+
+    // Resubscribe
+    if (connectionStatusRef.current === RealtimeConnectionStatus.Open) {
+      setSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
+      subscriptionStatusRef.current = DocumentSubscriptionStatus.Subscribing
+    } else {
+      setSubscriptionStatus(DocumentSubscriptionStatus.Unready)
+      subscriptionStatusRef.current = DocumentSubscriptionStatus.Unready
+    }
+  }, [documentId])
+
+  useEffect(() => {
+    if (
+      subscriptionStatus !== DocumentSubscriptionStatus.Subscribing ||
+      subscriptionIdRef.current !== undefined
+    ) {
+      return
+    }
+
+    subscriptionIdRef.current = uniqueId(5)
+    subscribedToDocumentIdRef.current = documentIdRef.current
     sendMessage({
       messageId: uniqueId(),
-      documentId: documentIdRef.current!,
       type: 'subscribe',
+      docId: subscribedToDocumentIdRef.current!,
+      subId: subscriptionIdRef.current!,
     })
-  }, [connectionStatus])
+  }, [subscriptionStatus])
 
   return {
     subscriptionStatus,

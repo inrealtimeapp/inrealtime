@@ -69,6 +69,7 @@ export const useRealtimeConnection = <TRealtimePresenceData>({
 
   return {
     connectionStatus,
+    connectionStatusRef,
     presenceStatus,
     useCollaborators,
     subscribeCollaborators,

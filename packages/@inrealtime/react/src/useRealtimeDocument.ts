@@ -16,6 +16,7 @@ export enum RealtimeDocumentStatus {
 export const useRealtimeDocument = <TRealtimeState>({
   config,
   connectionStatus,
+  connectionStatusRef,
   useChannel,
   documentId,
   throttle: throttleOption,
@@ -27,6 +28,7 @@ export const useRealtimeDocument = <TRealtimeState>({
     useDocumentChannel<TRealtimeState>({
       config,
       connectionStatus,
+      connectionStatusRef,
       useChannel,
       documentId,
       throttle,

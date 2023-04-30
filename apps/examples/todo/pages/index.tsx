@@ -5,11 +5,56 @@ import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
 import { Avatars, Item } from '@/components'
 import { usePatch, useDocumentStatus, useStore } from '@/realtime.config'
-import { RealtimeDocumentStatus } from '@inrealtime/react'
-
+import { RealtimeDocumentStatus, useAutosave } from '@inrealtime/react'
+import { RealtimeDocumentProvider } from '@/realtime.config'
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
+  const [startOfHour, setStartOfHour] = useState('123')
+  const { createNewDocument } = useAutosave({ storeNamePostfix: 'test', disableWarning: true })
+  //const startOfHour = useMemo(() => dayjs().utc().format('YYMMDDHH').toString(), [])
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          const id = `${Math.floor(Math.random() * 5000) + 10000}`
+          createNewDocument({
+            documentId: id,
+            document: {
+              todos: [
+                {
+                  id: '1',
+                  label: 'test',
+                  isCompleted: false,
+                },
+                {
+                  id: '2',
+                  label: 'test2',
+                  isCompleted: true,
+                },
+              ],
+            },
+          }).then(() => {
+            setStartOfHour(id)
+            console.log('Id is set', id)
+          })
+        }}
+      >
+        Test
+      </button>
+
+      <RealtimeDocumentProvider documentId={startOfHour}>
+        <Todo />
+      </RealtimeDocumentProvider>
+      <RealtimeDocumentProvider documentId={'1234'}>
+        <Todo />
+      </RealtimeDocumentProvider>
+    </div>
+  )
+}
+
+const Todo = () => {
   const status = useDocumentStatus()
   const patch = usePatch()
 
@@ -71,7 +116,7 @@ export default function Home() {
   // broadcast('exampleEvent', { data: { example: 'data' } })
 
   return (
-    <main className={`${inter.className}} min-h-screen wrapper`}>
+    <div className={`${inter.className}} min-h-screen wrapper`}>
       <h1 className='font-semibold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-5'>
         inrealtime / examples / todo
       </h1>
@@ -122,6 +167,6 @@ export default function Home() {
           ))}
         </Reorder.Group>
       )}
-    </main>
+    </div>
   )
 }

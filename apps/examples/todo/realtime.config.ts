@@ -1,4 +1,4 @@
-import { createRealtimeContext } from '@inrealtime/react'
+import { createRealtimeContext, createRealtimeGroupContext } from '@inrealtime/react'
 
 export interface TodoItem {
   id: string
@@ -16,9 +16,29 @@ export type PresenceData = {
   cursor?: { x?: number; y?: number }
 }
 
+// export const {
+//   RealtimeProvider,
+//   useRealtimeContext,
+//   usePresenceStatus,
+//   useConnectionStatus,
+//   useDocumentStatus,
+//   useStore,
+//   usePatch,
+//   useSubscribe,
+//   useCollaborators,
+//   useSubscribeCollaborators,
+//   useMe,
+//   usePatchMe,
+//   useSubscribeMe,
+//   useBroadcast,
+//   useBroadcastListener,
+// } = createRealtimeContext<RealtimeDocument, PresenceData>()
+
 export const {
-  RealtimeProvider,
-  useRealtimeContext,
+  RealtimeGroupProvider,
+  RealtimeDocumentProvider,
+  useRealtimeGroupContext,
+  useRealtimeDocumentContext,
   usePresenceStatus,
   useConnectionStatus,
   useDocumentStatus,
@@ -32,4 +52,4 @@ export const {
   useSubscribeMe,
   useBroadcast,
   useBroadcastListener,
-} = createRealtimeContext<RealtimeDocument, PresenceData>()
+} = createRealtimeGroupContext<RealtimeDocument, PresenceData>()
