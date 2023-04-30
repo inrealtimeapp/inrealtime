@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.0
+
+### Minor Changes
+
+- Updated Realtime protocol. Added single connection multi document providers.
+
 ## 0.1.11
 
 ### Patch Changes
