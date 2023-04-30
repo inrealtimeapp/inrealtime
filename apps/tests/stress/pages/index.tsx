@@ -12,7 +12,7 @@ function randomIntFromInterval(min: number, max: number) {
 }
 
 export default function Home() {
-  const [documentId, setDocumentId] = useState<string>('doc')
+  const [documentId, setDocumentId] = useState<string>('test_document')
   const randomEnabledRef = useRef(false)
   const [fakeState, setFakeState] = useState(0)
 
@@ -26,7 +26,6 @@ export default function Home() {
       },
     },
     throttle: 15,
-    autosave: true,
   })
 
   const doRandom = useCallback(() => {

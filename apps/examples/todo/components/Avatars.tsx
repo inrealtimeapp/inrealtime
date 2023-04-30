@@ -1,18 +1,8 @@
-import {
-  useCollaborators,
-  useConnectionStatus,
-  useMe,
-  usePatchMe,
-  usePresenceStatus,
-} from '@/realtime.config'
+import { useCollaborators, useMe, usePatchMe, usePresenceStatus } from '@/realtime.config'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect } from 'react'
 import { shallow } from 'zustand/shallow'
-import {
-  RealtimeConnectionStatus,
-  RealtimeDocumentStatus,
-  RealtimePresenceStatus,
-} from '@inrealtime/react'
+import { RealtimePresenceStatus } from '@inrealtime/react'
 
 const emojis = [
   '🥰',
