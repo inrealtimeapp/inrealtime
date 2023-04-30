@@ -1,4 +1,4 @@
-import { Fragment, FragmentTypeList, FragmentTypeMap } from '../../../../core'
+import { Fragment, FragmentType } from '../../../../core'
 
 export type FragmentPath = string[]
 export type ImmerPath = (string | number)[]
@@ -27,7 +27,7 @@ export const addFragmentIdToPath = ({
     fragmentIdToPath[item.fragment.id] = item.path
 
     // Add all items in map and list
-    if (item.fragment.type == FragmentTypeMap || item.fragment.type == FragmentTypeList) {
+    if (item.fragment.type == FragmentType.Map || item.fragment.type == FragmentType.List) {
       const map = item.fragment.value as {
         [key: string]: Fragment
       }
@@ -57,7 +57,7 @@ export const removeFragmentIdToPath = ({
     const item = queue.shift()!
     delete fragmentIdToPath[item.id]
     // Add all items in map and list
-    if (item.type == FragmentTypeMap || item.type == FragmentTypeList) {
+    if (item.type == FragmentType.Map || item.type == FragmentType.List) {
       const map = item.value as {
         [key: string]: Fragment
       }

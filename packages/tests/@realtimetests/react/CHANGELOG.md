@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.1.0
+
+### Minor Changes
+
+- Updated Realtime protocol. Added single connection multi document providers.
+
 ## 0.0.18
 
 ### Patch Changes

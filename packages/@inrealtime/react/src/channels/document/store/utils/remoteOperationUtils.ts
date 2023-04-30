@@ -10,7 +10,7 @@ import {
   DocumentSetRootRequest,
   DocumentSetRootResponse,
   Fragment,
-  FragmentTypeList,
+  FragmentType,
 } from '../../../../core'
 import { RealtimeStore } from '../types'
 import { fragmentToDocument } from './fragmentUtils'
@@ -38,6 +38,9 @@ export const applyRemoteOperationsToStores = (
     {
       messageId: '',
       type: 'ops',
+      docId: '',
+      clientId: '',
+      clientSubId: '',
       operations: minifiedOperations,
     },
   ]
@@ -131,7 +134,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             )
 
             // Insert into parent document
-            if (parentFragment.type === FragmentTypeList) {
+            if (parentFragment.type === FragmentType.List) {
               // Add to list
               const list = parentDocument as any[]
               const documentIndex = insertedFragment.parentListIndex!
@@ -180,7 +183,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             const { removedIndex, parentFragment, parentFragmentPath } = deleteWithFragmentIdResult
 
             const fragmentToInsert = clone(operation.value)
-            if (parentFragment.type === FragmentTypeList) {
+            if (parentFragment.type === FragmentType.List) {
               // Its very important that we use this index. On remote the removedIndex will be equal to the index of the operation.
               // Locally it may not be due to moves or inserts it hasn't received yet.
               fragmentToInsert.parentListIndex = removedIndex as number
@@ -215,7 +218,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             )
 
             // Insert into parent document
-            if (parentFragment.type === FragmentTypeList) {
+            if (parentFragment.type === FragmentType.List) {
               // Add to list
               const list = parentDocument as any[]
               const documentIndex = insertedFragment.parentListIndex!
@@ -262,7 +265,7 @@ export const applyRemoteOperationsMessages = <TRealtimeState>({
             )
 
             // Delete from document
-            if (parentFragment.type === FragmentTypeList) {
+            if (parentFragment.type === FragmentType.List) {
               // Remove from list
               const list = parentDocument as any[]
               list.splice(removedIndex as number, 1)

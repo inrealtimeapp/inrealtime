@@ -2,12 +2,6 @@ import {
   clone,
   Fragment,
   FragmentType,
-  FragmentTypeBoolean,
-  FragmentTypeList,
-  FragmentTypeMap,
-  FragmentTypeNull,
-  FragmentTypeNumber,
-  FragmentTypeString,
   isBoolean,
   isList,
   isMap,
@@ -19,17 +13,17 @@ import {
 export const getFragmentType = (fragment: any): FragmentType => {
   switch (true) {
     case fragment == null:
-      return FragmentTypeNull
+      return FragmentType.Null
     case isList(fragment):
-      return FragmentTypeList
+      return FragmentType.List
     case isMap(fragment):
-      return FragmentTypeMap
+      return FragmentType.Map
     case isNumber(fragment):
-      return FragmentTypeNumber
+      return FragmentType.Number
     case isBoolean(fragment):
-      return FragmentTypeBoolean
+      return FragmentType.Boolean
     case isString(fragment):
-      return FragmentTypeString
+      return FragmentType.String
   }
   throw new Error(`Error evaluating fragment type for value '${fragment}'.`)
 }
@@ -39,12 +33,12 @@ export const getFragmentType = (fragment: any): FragmentType => {
  */
 export const fragmentToDocument = ({ fragment }: { fragment: Fragment }): any => {
   const rootDocument: any =
-    fragment.type == FragmentTypeMap
+    fragment.type == FragmentType.Map
       ? {}
-      : fragment.type == FragmentTypeList
+      : fragment.type == FragmentType.List
       ? []
       : clone(fragment.value)
-  if (fragment.type !== FragmentTypeMap && fragment.type !== FragmentTypeList) {
+  if (fragment.type !== FragmentType.Map && fragment.type !== FragmentType.List) {
     return rootDocument
   }
 
@@ -56,7 +50,7 @@ export const fragmentToDocument = ({ fragment }: { fragment: Fragment }): any =>
     const { documentFragment, document } = queue.shift()!
 
     // Add all list items
-    if (documentFragment.type == FragmentTypeList) {
+    if (documentFragment.type == FragmentType.List) {
       const list = Object.values(documentFragment.value).sort(function (a, b) {
         return a.parentListIndex! - b.parentListIndex!
       })
@@ -64,15 +58,15 @@ export const fragmentToDocument = ({ fragment }: { fragment: Fragment }): any =>
       const listDocument = document as any[]
       for (const listItem of list) {
         const listItemDocument: any =
-          listItem.type == FragmentTypeMap
+          listItem.type == FragmentType.Map
             ? {}
-            : listItem.type == FragmentTypeList
+            : listItem.type == FragmentType.List
             ? []
             : clone(listItem.value)
         listDocument.push(listItemDocument)
 
         // Only add map & list items to the queue
-        if (listItem.type === FragmentTypeMap || listItem.type === FragmentTypeList) {
+        if (listItem.type === FragmentType.Map || listItem.type === FragmentType.List) {
           queue.push({
             documentFragment: listItem,
             document: listItemDocument,
@@ -82,7 +76,7 @@ export const fragmentToDocument = ({ fragment }: { fragment: Fragment }): any =>
     }
 
     // Add all items in map
-    if (documentFragment.type == FragmentTypeMap) {
+    if (documentFragment.type == FragmentType.Map) {
       const map = documentFragment.value as {
         [key: string]: Fragment
       }
@@ -91,15 +85,15 @@ export const fragmentToDocument = ({ fragment }: { fragment: Fragment }): any =>
         const mapItem = map[subKey]!
 
         const mapItemDocument: any =
-          mapItem.type == FragmentTypeMap
+          mapItem.type == FragmentType.Map
             ? {}
-            : mapItem.type == FragmentTypeList
+            : mapItem.type == FragmentType.List
             ? []
             : clone(mapItem.value)
         mapDocument[subKey] = mapItemDocument
 
         // Only add map & list items to the queue
-        if (mapItem.type === FragmentTypeMap || mapItem.type === FragmentTypeList) {
+        if (mapItem.type === FragmentType.Map || mapItem.type === FragmentType.List) {
           queue.push({
             documentFragment: mapItem,
             document: mapItemDocument,
@@ -135,7 +129,7 @@ const getFragmentSubItems = ({
   }[] = []
 
   // Create all items in fragment list
-  if (fragment.type == FragmentTypeList) {
+  if (fragment.type == FragmentType.List) {
     const list = rawDocument as any[]
 
     list.forEach((listItem, i) => {
@@ -148,7 +142,7 @@ const getFragmentSubItems = ({
   }
 
   // Create all sub-fragments
-  if (fragment.type == FragmentTypeMap) {
+  if (fragment.type == FragmentType.Map) {
     const map = rawDocument as { [key: string]: any }
     for (const subKey of Object.keys(map)) {
       queue.push({
@@ -171,7 +165,7 @@ export const documentToFragment = (document: any, rootFragmentId?: string): Frag
   const rootFragment: Fragment = {
     id: rootFragmentId ?? uniqueId(),
     type: rootType as any,
-    value: rootType == FragmentTypeMap || rootType == FragmentTypeList ? {} : document,
+    value: rootType == FragmentType.Map || rootType == FragmentType.List ? {} : document,
   }
 
   // Create the initial queue
@@ -191,7 +185,7 @@ export const documentToFragment = (document: any, rootFragmentId?: string): Frag
     const { rawDocument, parentFragment, parentMapKey, parentListIndex } = queue.shift()!
     const id = uniqueId()
     const type = getFragmentType(rawDocument)
-    const document = type == FragmentTypeMap || type == FragmentTypeList ? {} : rawDocument
+    const document = type == FragmentType.Map || type == FragmentType.List ? {} : rawDocument
 
     const fragment: Fragment = {
       id: id,
@@ -208,10 +202,10 @@ export const documentToFragment = (document: any, rootFragmentId?: string): Frag
 
     // To build the output fragment we attach the document fragment to its parent
     switch (parentFragment.type) {
-      case FragmentTypeList:
+      case FragmentType.List:
         ;(parentFragment.value as any)[fragment.id!] = fragment
         break
-      case FragmentTypeMap:
+      case FragmentType.Map:
         if (parentMapKey) (parentFragment.value as any)[parentMapKey!] = fragment
         break
     }

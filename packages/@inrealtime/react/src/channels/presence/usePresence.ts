@@ -8,14 +8,14 @@ import {
   RealtimeMessage,
   uniqueId,
 } from '../../core'
-import { RealtimeWebSocketStatus } from '../../socket/types'
+import { RealtimeConnectionStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
 import { PatchMe, SubscribeCollaborators, SubscribeMe, UseCollaborators, UseMe } from './types'
 import { useCollaboratorStore } from './useCollaboratorStore'
 import { usePresenceStore } from './usePresenceStore'
 import { mergeData } from './utils'
 
-export enum PresenceStatus {
+export enum RealtimePresenceStatus {
   Unready = 'Unready',
   Syncing = 'Syncing',
   Ready = 'Ready',
@@ -25,7 +25,7 @@ const ReplaceMessageType = 'replace'
 const UpdateMessageType = 'update'
 
 export type UsePresenceChannel<TRealtimePresenceData> = {
-  status: PresenceStatus
+  status: RealtimePresenceStatus
   useCollaborators: UseCollaborators<TRealtimePresenceData>
   subscribeCollaborators: SubscribeCollaborators<TRealtimePresenceData>
   useMe: UseMe<TRealtimePresenceData>
@@ -34,20 +34,21 @@ export type UsePresenceChannel<TRealtimePresenceData> = {
 }
 
 export const usePresenceChannel = <TRealtimePresenceData>({
-  webSocketStatus,
-  webSocketStatusRef,
+  connectionStatus,
+  connectionStatusRef,
   useChannel,
   throttle,
 }: {
-  webSocketStatus: RealtimeWebSocketStatus
-  webSocketStatusRef: MutableRefObject<RealtimeWebSocketStatus>
+  connectionStatus: RealtimeConnectionStatus
+  connectionStatusRef: MutableRefObject<RealtimeConnectionStatus>
   useChannel: UseChannel
   throttle: number
 }): UsePresenceChannel<TRealtimePresenceData> => {
-  const [status, setStatus] = useState<PresenceStatus>(PresenceStatus.Unready)
+  const [status, setStatus] = useState<RealtimePresenceStatus>(RealtimePresenceStatus.Unready)
+  const statusRef = useRef<RealtimePresenceStatus>(RealtimePresenceStatus.Unready)
 
   // The id of the current client
-  const [presenceClientId, setPresenceClientId] = useState<string>()
+  const presenceClientIdRef = useRef<string>()
   const presenceLoadedRef = useRef<boolean>(false)
 
   // Operations that were received between before sync
@@ -62,7 +63,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
     (response: PresenceClientResponse<TRealtimePresenceData>) => {
       switch (response.type) {
         case 'client_add':
-          if (response.client.clientId === presenceClientId) {
+          if (response.client.clientId === presenceClientIdRef.current) {
             presenceStore.patch(({ presence }) => {
               response.client.data = presence.data
 
@@ -82,6 +83,9 @@ export const usePresenceChannel = <TRealtimePresenceData>({
               })
               return response.client
             })
+
+            setStatus(RealtimePresenceStatus.Ready)
+            statusRef.current = RealtimePresenceStatus.Ready
             presenceLoadedRef.current = true
             break
           }
@@ -100,7 +104,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           break
         case 'client_replace_metadata':
           // Local client
-          if (response.clientId === presenceClientId) {
+          if (response.clientId === presenceClientIdRef.current) {
             presenceStore.patch(({ presence }) => ({ ...presence, metadata: response.metadata }))
             break
           }
@@ -121,7 +125,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
         case 'client_replace_data':
         case 'client_update_data':
           // Local client
-          if (response.clientId === presenceClientId) {
+          if (response.clientId === presenceClientIdRef.current) {
             // We don't need to update local client as it will always have the newest updates as it can only update the data
             break
           }
@@ -147,11 +151,11 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           break
       }
     },
-    [presenceClientId, collaboratorStore.patch],
+    [],
   )
 
   useEffect(() => {
-    if (status !== PresenceStatus.Ready) {
+    if (status !== RealtimePresenceStatus.Ready) {
       return
     }
 
@@ -164,7 +168,8 @@ export const usePresenceChannel = <TRealtimePresenceData>({
   const onPresenceMessage = useCallback(
     (message: RealtimeMessage) => {
       if (
-        (status === PresenceStatus.Syncing || preSyncMessagesRef.current.length > 0) &&
+        ((statusRef.current === RealtimePresenceStatus.Syncing && !presenceClientIdRef.current) ||
+          preSyncMessagesRef.current.length > 0) &&
         message.type.startsWith('client_')
       ) {
         preSyncMessagesRef.current.push(message as PresenceClientResponse<TRealtimePresenceData>)
@@ -179,9 +184,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
             collaboratorStore.patch(({}) => syncResponse.clients)
 
             // Update my client id
-            setPresenceClientId(syncResponse.me.clientId)
-
-            setStatus(PresenceStatus.Ready)
+            presenceClientIdRef.current = syncResponse.me.clientId
           }
           break
         case 'client_add':
@@ -196,14 +199,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           break
       }
     },
-    [
-      status,
-      setStatus,
-      preSyncMessagesRef,
-      setPresenceClientId,
-      collaboratorStore.patch,
-      applyPresenceClientResponse,
-    ],
+    [applyPresenceClientResponse],
   )
 
   // Grouping multiple messages in the presence channel
@@ -242,6 +238,17 @@ export const usePresenceChannel = <TRealtimePresenceData>({
   // Patch me for replacing or updating one-self
   const patchMe: PatchMe<TRealtimePresenceData> = useMemo(() => {
     return (data: Partial<TRealtimePresenceData>, options?: { replace?: boolean }) => {
+      // If presence hasn't been added or socket hasn't been opened we wait to send presence messages
+      if (connectionStatusRef.current !== RealtimeConnectionStatus.Open) {
+        console.warn('Cannot patch presence data before connection is open.')
+        return
+      }
+
+      if (!presenceLoadedRef.current) {
+        console.warn('Cannot patch presence data before presence is ready.')
+        return
+      }
+
       presenceStore.patch(({ presence }) => {
         const clonedData = clone(data)
         return {
@@ -250,17 +257,6 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           dataUpdatedAt: new Date().toISOString(),
         }
       })
-
-      // If presence hasn't been added or socket hasn't been opened we wait to send presence messages
-      if (webSocketStatusRef.current !== RealtimeWebSocketStatus.Open) {
-        console.warn('Cannot patch presence data before socket is opened.')
-        return
-      }
-
-      if (!presenceLoadedRef.current) {
-        console.warn('Cannot patch presence data before presence is loaded.')
-        return
-      }
 
       sendMessage({
         messageId: uniqueId(),
@@ -274,20 +270,22 @@ export const usePresenceChannel = <TRealtimePresenceData>({
   const reset = useCallback(() => {
     collaboratorStore.reset()
     presenceStore.reset()
-    setPresenceClientId(undefined as any)
+    presenceClientIdRef.current = undefined as any
     preSyncMessagesRef.current = []
   }, [])
 
   // Initial sync
   useEffect(() => {
-    if (webSocketStatus !== RealtimeWebSocketStatus.Open) {
-      setStatus(PresenceStatus.Unready)
+    if (connectionStatus !== RealtimeConnectionStatus.Open) {
+      setStatus(RealtimePresenceStatus.Unready)
+      statusRef.current = RealtimePresenceStatus.Unready
       reset()
       return
     }
 
-    setStatus(PresenceStatus.Syncing)
-  }, [webSocketStatus])
+    setStatus(RealtimePresenceStatus.Syncing)
+    statusRef.current = RealtimePresenceStatus.Syncing
+  }, [connectionStatus])
 
   return {
     status: status,

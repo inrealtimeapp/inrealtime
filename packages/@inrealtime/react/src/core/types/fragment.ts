@@ -9,32 +9,32 @@ type BaseFragment = {
 }
 
 export type FragmentNull = BaseFragment & {
-  type: 'null'
+  type: FragmentType.Null
   value: null | undefined
 }
 
 export type FragmentBoolean = BaseFragment & {
-  type: 'boolean'
+  type: FragmentType.Boolean
   value: boolean
 }
 
 export type FragmentString = BaseFragment & {
-  type: 'string'
+  type: FragmentType.String
   value: string
 }
 
 export type FragmentNumber = BaseFragment & {
-  type: 'number'
+  type: FragmentType.Number
   value: number
 }
 
 export type FragmentList = BaseFragment & {
-  type: 'list'
+  type: FragmentType.List
   value: { [key: string]: Fragment }
 }
 
 export type FragmentMap = BaseFragment & {
-  type: 'map'
+  type: FragmentType.Map
   value: { [key: string]: Fragment }
 }
 
@@ -46,11 +46,11 @@ export type Fragment =
   | FragmentList
   | FragmentMap
 
-export type FragmentType = 'null' | 'list' | 'map' | 'number' | 'boolean' | 'string'
-
-export const FragmentTypeNull = 'null'
-export const FragmentTypeBoolean = 'boolean'
-export const FragmentTypeString = 'string'
-export const FragmentTypeNumber = 'number'
-export const FragmentTypeList = 'list'
-export const FragmentTypeMap = 'map'
+export enum FragmentType {
+  Null,
+  List,
+  Map,
+  Number,
+  Boolean,
+  String,
+}

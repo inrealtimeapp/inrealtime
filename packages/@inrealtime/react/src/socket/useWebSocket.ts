@@ -3,7 +3,7 @@ import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } f
 import { RealtimeConfig } from '../config'
 import { RealtimeMessage, RealtimeWebSocket, uniqueId } from '../core'
 import { createMessageStore } from './createMessageStore'
-import { MessageStore, RealtimeWebSocketStatus } from './types'
+import { MessageStore, RealtimeConnectionStatus } from './types'
 import { useMessages } from './useMessages'
 
 export type UseChannel = ({
@@ -20,8 +20,8 @@ export type UseChannel = ({
 }
 
 export type UseWebSocket = {
-  status: RealtimeWebSocketStatus
-  statusRef: MutableRefObject<RealtimeWebSocketStatus>
+  status: RealtimeConnectionStatus
+  statusRef: MutableRefObject<RealtimeConnectionStatus>
   useChannel: UseChannel
 }
 
@@ -34,10 +34,10 @@ export const useWebSocket = ({
   token?: string
   config: RealtimeConfig
 }): UseWebSocket => {
-  const [socketStatus, setSocketStatus] = useState<RealtimeWebSocketStatus>(
-    RealtimeWebSocketStatus.Closed,
+  const [socketStatus, setSocketStatus] = useState<RealtimeConnectionStatus>(
+    RealtimeConnectionStatus.Closed,
   )
-  const socketStatusRef = useRef<RealtimeWebSocketStatus>(socketStatus)
+  const socketStatusRef = useRef<RealtimeConnectionStatus>(socketStatus)
   const [lastToken, setLastToken] = useState<string | undefined>()
   const messageStoreRef = useRef<MessageStore>(createMessageStore())
   const authChannelPrefix = 'auth'
@@ -78,8 +78,8 @@ export const useWebSocket = ({
         }
 
         if (config.logging.socketStatus) console.log('Socket status -> Authenticating')
-        setSocketStatus(RealtimeWebSocketStatus.Authenticating)
-        socketStatusRef.current = RealtimeWebSocketStatus.Authenticating
+        setSocketStatus(RealtimeConnectionStatus.Authenticating)
+        socketStatusRef.current = RealtimeConnectionStatus.Authenticating
       },
       onConnecting: () => {
         if (realtimeWebSocketRef.current !== realtimeWebSocket) {
@@ -87,8 +87,8 @@ export const useWebSocket = ({
         }
 
         if (config.logging.socketStatus) console.log('Socket status -> Connecting')
-        setSocketStatus(RealtimeWebSocketStatus.Connecting)
-        socketStatusRef.current = RealtimeWebSocketStatus.Connecting
+        setSocketStatus(RealtimeConnectionStatus.Connecting)
+        socketStatusRef.current = RealtimeConnectionStatus.Connecting
       },
       onClose: () => {
         if (realtimeWebSocketRef.current !== realtimeWebSocket) {
@@ -96,8 +96,8 @@ export const useWebSocket = ({
         }
 
         if (config.logging.socketStatus) console.log('Socket status -> Closed')
-        setSocketStatus(RealtimeWebSocketStatus.Closed)
-        socketStatusRef.current = RealtimeWebSocketStatus.Closed
+        setSocketStatus(RealtimeConnectionStatus.Closed)
+        socketStatusRef.current = RealtimeConnectionStatus.Closed
         setLastToken(undefined as any)
       },
       onMessage: (channel, message) => {
@@ -115,7 +115,7 @@ export const useWebSocket = ({
 
   // Try reconnections
   useEffect(() => {
-    if (socketStatus !== RealtimeWebSocketStatus.Closed) {
+    if (socketStatus !== RealtimeConnectionStatus.Closed) {
       return
     }
     const interval = setInterval(() => {
@@ -146,12 +146,12 @@ export const useWebSocket = ({
     channel: authChannelPrefix,
     onMessage: useCallback(
       (message: RealtimeMessage) => {
-        if (message.type !== 'token' || socketStatus !== RealtimeWebSocketStatus.Authenticating) {
+        if (message.type !== 'token' || socketStatus !== RealtimeConnectionStatus.Authenticating) {
           return
         }
         if (config.logging.socketStatus) console.log('Socket status -> Open')
-        setSocketStatus(RealtimeWebSocketStatus.Open)
-        socketStatusRef.current = RealtimeWebSocketStatus.Open
+        setSocketStatus(RealtimeConnectionStatus.Open)
+        socketStatusRef.current = RealtimeConnectionStatus.Open
       },
       [socketStatus, token],
     ),
@@ -160,7 +160,7 @@ export const useWebSocket = ({
 
   // Send initial auth token
   useEffect(() => {
-    if (socketStatus !== RealtimeWebSocketStatus.Authenticating) {
+    if (socketStatus !== RealtimeConnectionStatus.Authenticating) {
       return
     }
 
@@ -170,7 +170,7 @@ export const useWebSocket = ({
 
   // Send updated tokens
   useEffect(() => {
-    if (socketStatus !== RealtimeWebSocketStatus.Open || lastToken === token || !token) {
+    if (socketStatus !== RealtimeConnectionStatus.Open || lastToken === token || !token) {
       return
     }
 
@@ -189,7 +189,7 @@ const useRawChannel = ({
   throttle,
   groupMessagesOnSend,
 }: {
-  realtimeWebSocketRef: MutableRefObject<RealtimeWebSocket>
+  realtimeWebSocketRef: MutableRefObject<RealtimeWebSocket | undefined>
   messageStoreRef: MutableRefObject<MessageStore>
   channel: string
   onMessage: (message: RealtimeMessage) => void
@@ -197,7 +197,7 @@ const useRawChannel = ({
   groupMessagesOnSend?: (messages: RealtimeMessage[]) => RealtimeMessage[]
 }): { sendMessage(message: RealtimeMessage): void } => {
   const messageQueueRef = useRef<RealtimeMessage[]>([])
-  const sendMessagesInterval = useRef<number>()
+  const sendMessagesInterval = useRef<any>()
 
   useMessages(
     messageStoreRef.current,
@@ -223,7 +223,7 @@ const useRawChannel = ({
         return
       }
       messageQueueRef.current = []
-      messages.forEach((message) => realtimeWebSocketRef.current.sendMessage(channel, message))
+      messages.forEach((message) => realtimeWebSocketRef.current?.sendMessage(channel, message))
     }, throttle)
     return () => clearInterval(sendMessagesInterval.current!)
   }, [throttle, channel, groupMessagesOnSend])

@@ -3,8 +3,10 @@ import { RealtimeConfig } from '../../config'
 
 export type GetRealtimeAuthToken = ({
   documentId,
+  groupId,
 }: {
-  documentId: string
+  documentId?: string
+  groupId?: string
 }) => string | Promise<string>
 
 export class RealtimeAuth {
@@ -25,16 +27,15 @@ export class RealtimeAuth {
     this._publicAuthKey = publicAuthKey
   }
 
-  async auth({ documentId }: { documentId: string }): Promise<{
+  async auth({ documentId, groupId }: { documentId?: string; groupId?: string }): Promise<{
     socketUrl: string
     projectId: string
-    documentId: string
     authExpiryTime: number
     token: string
   }> {
     let token: string
     if (this._getAuthToken) {
-      token = await this._getAuthToken({ documentId })
+      token = await this._getAuthToken({ documentId, groupId })
 
       if (this._publicAuthKey) {
         console.warn(
@@ -52,7 +53,6 @@ export class RealtimeAuth {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          documentId,
           authKey: this._publicAuthKey,
         }),
         credentials: 'include',
@@ -70,11 +70,14 @@ export class RealtimeAuth {
 
     const tokenPayload = getJwtPayload(token)
     const projectId = tokenPayload.projectId
+    const socketUrl =
+      groupId !== undefined
+        ? `${this._config.webSocketUrl}/projects/${projectId}/groups/${groupId}`
+        : `${this._config.webSocketUrl}/projects/${projectId}/documents/${documentId}`
 
     return {
-      socketUrl: `${this._config.webSocketUrl}/projects/${projectId}/documents/${documentId}`,
+      socketUrl,
       projectId,
-      documentId,
       authExpiryTime: tokenPayload.exp,
       token,
     }

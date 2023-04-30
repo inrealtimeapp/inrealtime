@@ -6,7 +6,6 @@ import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 import { Avatars, Item } from '@/components'
 import { usePatch, useDocumentStatus, useStore } from '@/realtime.config'
 import { RealtimeDocumentStatus } from '@inrealtime/react'
-
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {

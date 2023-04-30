@@ -15,7 +15,9 @@ export type DocumentOperationResponse =
 export type DocumentOperationsResponse = {
   messageId: string // The unique identifier of the message
   type: string
-  clientId?: string
+  docId: string
+  clientId: string
+  clientSubId?: string
   operations: DocumentOperationResponse[]
 }
 
@@ -55,6 +57,7 @@ export type DocumentMoveResponse = {
 export type DocumentOperationsRequest = {
   messageId: string // The unique identifier of the message
   type: string
+  subId: string
   operations: DocumentOperationRequest[]
 }
 
@@ -107,6 +110,8 @@ export const DocumentOperationMove = 'move'
  * Ack response on document operation
  */
 export type DocumentOperationAckResponse = RealtimeMessage & {
+  docId: string
+  subId: string
   ackMessageId: string
   opsMetadata: { [key: number]: any }
 }
