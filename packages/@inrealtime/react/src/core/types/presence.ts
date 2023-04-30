@@ -1,9 +1,9 @@
 /**
  * Document operations
  */
-export type PermissionType = 'read' | 'write' | 'sync' | 'lock'
+export type PermissionType = 'read' | 'write'
 export type Permissions = {
-  document: PermissionType[]
+  documents: PermissionType[]
   presence: PermissionType[]
   broadcast: PermissionType[]
 }

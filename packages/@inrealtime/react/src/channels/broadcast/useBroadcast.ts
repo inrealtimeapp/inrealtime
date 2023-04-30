@@ -1,7 +1,7 @@
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { BroadcastEventRequest, BroadcastEventResponse, uniqueId } from '../../core'
-import { RealtimeWebSocketStatus } from '../../socket/types'
+import { RealtimeConnectionStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
 import { Broadcast, UseBroadcastListener } from '../presence/types'
 import { BroadcastStore, createBroadcastStore } from './createBroadcastStore'
@@ -12,11 +12,11 @@ export type UseBroadcastChannel = {
 }
 
 export const useBroadcastChannel = ({
-  webSocketStatusRef,
+  connectionStatusRef,
   useChannel,
   throttle,
 }: {
-  webSocketStatusRef: MutableRefObject<RealtimeWebSocketStatus>
+  connectionStatusRef: MutableRefObject<RealtimeConnectionStatus>
   useChannel: UseChannel
   throttle: number
 }): UseBroadcastChannel => {
@@ -34,8 +34,8 @@ export const useBroadcastChannel = ({
 
   const broadcast = useMemo(
     () => (type: string, options: { data?: any; recipientClientIds?: string[] }) => {
-      if (webSocketStatusRef.current !== RealtimeWebSocketStatus.Open) {
-        console.warn('Cannot send broadcast event when socket is not open')
+      if (connectionStatusRef.current !== RealtimeConnectionStatus.Open) {
+        console.warn('Cannot send broadcast event when connection status is not open.')
         return
       }
 

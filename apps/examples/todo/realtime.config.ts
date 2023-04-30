@@ -19,8 +19,9 @@ export type PresenceData = {
 export const {
   RealtimeProvider,
   useRealtimeContext,
-  useDocumentStatus,
+  usePresenceStatus,
   useConnectionStatus,
+  useDocumentStatus,
   useStore,
   usePatch,
   useSubscribe,

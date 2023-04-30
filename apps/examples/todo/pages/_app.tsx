@@ -6,7 +6,7 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 
 import { RealtimeProvider } from '@/realtime.config'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useAutosave } from '@inrealtime/react'
 
 dayjs.extend(utc)
@@ -40,7 +40,10 @@ export default function App({ Component, pageProps }: AppProps) {
                 },
               ],
             },
-          }).then(() => [setStartOfHour(id)])
+          }).then(() => {
+            setStartOfHour(id)
+            console.log('Id is set', id)
+          })
         }}
       >
         Test
@@ -49,7 +52,8 @@ export default function App({ Component, pageProps }: AppProps) {
         documentId={startOfHour}
         publicAuthKey={process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY}
         throttle={20}
-        autosave={{ storeNamePostfix: 'test', disableWarning: true }}
+        _package={{ environment: 'local' }}
+        //autosave={{ storeNamePostfix: 'test', disableWarning: true }}
       >
         <Component {...pageProps} />
       </RealtimeProvider>

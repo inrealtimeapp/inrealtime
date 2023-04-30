@@ -14,6 +14,7 @@ const ReAuthenticationTimeBeforeTokenExpiry = 2.5 * 60 * 1000 // 2.5 minutes
 
 type AuthOptions = {
   documentId?: string
+  groupId?: string
   getAuthToken?: GetRealtimeAuthToken
   publicAuthKey?: string
   config: RealtimeConfig
@@ -24,7 +25,6 @@ type AuthState = {
   socketUrl?: string
   token?: string
   projectId?: string
-  documentId?: string
 }
 
 enum AuthenticationStatus {
@@ -50,11 +50,13 @@ export const getJwtPayload = (token: string) => {
 const authenticateFn = async ({
   realtimeAuth,
   documentId,
+  groupId,
 }: {
   realtimeAuth: RealtimeAuth
-  documentId: string
+  documentId?: string
+  groupId?: string
 }) => {
-  const { socketUrl, token, projectId } = await realtimeAuth.auth({ documentId })
+  const { socketUrl, token, projectId } = await realtimeAuth.auth({ documentId, groupId })
   const tokenPayload = getJwtPayload(token)
 
   const tokenExpiryTime: number = tokenPayload.exp
@@ -64,6 +66,7 @@ const authenticateFn = async ({
 export const useAuth = ({
   config,
   documentId,
+  groupId,
   getAuthToken,
   publicAuthKey,
 }: AuthOptions): AuthState => {
@@ -73,6 +76,7 @@ export const useAuth = ({
     tokenExpiryTime?: number
     projectId?: string
     documentId?: string
+    groupId?: string
   }>({})
   const [status, setStatus] = useState<AuthenticationStatus>(AuthenticationStatus.Authenticating)
 
@@ -84,8 +88,8 @@ export const useAuth = ({
   }, [getAuthToken, publicAuthKey])
 
   const authenticate = useCallback(
-    () => authenticateFn({ realtimeAuth, documentId: documentId! }),
-    [realtimeAuth, documentId],
+    () => authenticateFn({ realtimeAuth, documentId, groupId }),
+    [realtimeAuth, documentId, groupId],
   )
 
   // Re-authenticate during errors
@@ -128,22 +132,25 @@ export const useAuth = ({
       return
     }
 
-    if (!documentId) {
+    if (documentId === undefined && groupId === undefined) {
       return
     }
 
-    if (authData.documentId === documentId) {
+    if (
+      (documentId !== undefined && authData.documentId === documentId) ||
+      (groupId !== undefined && authData.groupId === groupId)
+    ) {
       return
     }
 
     setAuthData({})
     setStatus(AuthenticationStatus.Authenticating)
     setExponentialTimer(0)
-  }, [status, documentId])
+  }, [status, documentId, groupId])
 
   // Authenticate
   useEffect(() => {
-    if (!documentId) {
+    if (documentId === undefined && groupId === undefined) {
       setAuthData({})
       setStatus(AuthenticationStatus.Authenticating)
       setExponentialTimer(0)
@@ -156,7 +163,7 @@ export const useAuth = ({
 
     authenticate()
       .then(({ socketUrl, token, tokenExpiryTime, projectId }) => {
-        setAuthData({ socketUrl, token, tokenExpiryTime, projectId, documentId })
+        setAuthData({ socketUrl, token, tokenExpiryTime, projectId, documentId, groupId })
         setStatus(AuthenticationStatus.Authenticated)
         if (config.logging.socketStatus) console.log('Auth status -> Authenticated')
       })
@@ -175,13 +182,12 @@ export const useAuth = ({
         )
         setExponentialTimer(newExponentialTimer)
       })
-  }, [status, authenticate, documentId])
+  }, [status, authenticate, documentId, groupId])
 
   return {
     status,
     socketUrl: authData.socketUrl,
     token: authData.token,
     projectId: authData.projectId,
-    documentId: authData.documentId,
   }
 }

@@ -12,7 +12,7 @@ import {
   RealtimeMessage,
   uniqueId,
 } from '../../core'
-import { RealtimeWebSocketStatus } from '../../socket/types'
+import { RealtimeConnectionStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
 import { useDocumentAutosave } from './autosave/useDocumentAutosave'
 import { areStoresEqual } from './store/tests/storeEqual'
@@ -26,13 +26,13 @@ import { applyRemoteOperationsToStores } from './store/utils/remoteOperationUtil
 export const OpsMessageType = 'ops'
 const MaxOpsPerMessage = 30
 
-export enum DocumentStatus {
+export enum DocumentSubscriptionStatus {
   Unready = 'Unready',
   Subscribing = 'Subscribing',
   Ready = 'Ready',
 }
 
-export enum DocumentEditStatus {
+export enum DocumentAvailabilityStatus {
   Unready = 'Unready',
   ReadyLocal = 'ReadyLocal',
   Ready = 'Ready',
@@ -40,25 +40,33 @@ export enum DocumentEditStatus {
 
 export const useDocumentChannel = <TRealtimeState>({
   config,
-  webSocketStatus,
+  connectionStatus,
   useChannel,
   documentId,
   throttle: requestedThrottle,
 }: {
   config: RealtimeConfig
-  webSocketStatus: RealtimeWebSocketStatus
+  connectionStatus: RealtimeConnectionStatus
   useChannel: UseChannel
   documentId?: string
   throttle: number
 }) => {
-  const [status, setStatus] = useState<DocumentStatus>(DocumentStatus.Unready)
-  const statusRef = useRef<DocumentStatus>(DocumentStatus.Unready)
+  const [subscriptionStatus, setSubscriptionSubscriptionStatus] =
+    useState<DocumentSubscriptionStatus>(DocumentSubscriptionStatus.Unready)
+  const subscriptionStatusRef = useRef<DocumentSubscriptionStatus>(
+    DocumentSubscriptionStatus.Unready,
+  )
 
-  const [editStatus, setEditStatus] = useState<DocumentEditStatus>(DocumentEditStatus.Unready)
-  const editStatusRef = useRef<DocumentEditStatus>(DocumentEditStatus.Unready)
+  const [availabilityStatus, setAvailabilityStatus] = useState<DocumentAvailabilityStatus>(
+    DocumentAvailabilityStatus.Unready,
+  )
+  const availabilityStatusRef = useRef<DocumentAvailabilityStatus>(
+    DocumentAvailabilityStatus.Unready,
+  )
 
   const [throttle, setThrottle] = useState<number>(0)
   const sendMessageRef = useRef<(message: RealtimeMessage) => void>()
+  const documentIdRef = useRef<string | undefined>(documentId)
 
   // Operations that were received between subscribe and sync
   const preSyncReceivedOperationsRef = useRef<DocumentOperationsResponse[]>([])
@@ -71,6 +79,10 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // Save local changes ref
   const saveLocalChangesRef = useRef<(request: DocumentOperationsRequest) => void>()
+
+  useEffect(() => {
+    documentIdRef.current = documentId
+  }, [documentId])
 
   // Send operations to the channel
   const sendOperations = useCallback((request: DocumentOperationsRequest) => {
@@ -110,8 +122,8 @@ export const useDocumentChannel = <TRealtimeState>({
   // On local operations we want to send messages to the channel
   const onLocalPatchOperations = useCallback((requests: DocumentOperationRequest[]) => {
     if (
-      (editStatusRef.current !== DocumentEditStatus.Ready &&
-        editStatusRef.current !== DocumentEditStatus.ReadyLocal) ||
+      (availabilityStatusRef.current !== DocumentAvailabilityStatus.Ready &&
+        availabilityStatusRef.current !== DocumentAvailabilityStatus.ReadyLocal) ||
       requests.length === 0
     ) {
       return
@@ -119,6 +131,7 @@ export const useDocumentChannel = <TRealtimeState>({
 
     const request: DocumentOperationsRequest = {
       messageId: uniqueId(),
+      documentId: documentIdRef.current!,
       type: OpsMessageType,
       operations: requests,
     }
@@ -127,7 +140,7 @@ export const useDocumentChannel = <TRealtimeState>({
       saveLocalChangesRef.current!(request)
     }
 
-    if (statusRef.current !== DocumentStatus.Ready) {
+    if (subscriptionStatusRef.current !== DocumentSubscriptionStatus.Ready) {
       return
     }
 
@@ -157,7 +170,7 @@ export const useDocumentChannel = <TRealtimeState>({
     documentId,
     localStore,
     onLocalData: useCallback((fragment) => {
-      if (editStatusRef.current === DocumentEditStatus.Ready) {
+      if (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready) {
         return
       }
       if (fragment.type !== FragmentTypeList && fragment.type !== FragmentTypeMap) {
@@ -174,19 +187,19 @@ export const useDocumentChannel = <TRealtimeState>({
       conflictsIdsRef.current = []
       unackedOperationsRef.current = []
 
-      setEditStatus(DocumentEditStatus.ReadyLocal)
-      editStatusRef.current = DocumentEditStatus.ReadyLocal
+      setAvailabilityStatus(DocumentAvailabilityStatus.ReadyLocal)
+      availabilityStatusRef.current = DocumentAvailabilityStatus.ReadyLocal
     }, []),
     onNoLocalData: useCallback(() => {
-      if (editStatusRef.current === DocumentEditStatus.Ready) {
+      if (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready) {
         return
       }
 
       conflictsIdsRef.current = []
       unackedOperationsRef.current = []
 
-      setEditStatus(DocumentEditStatus.Unready)
-      editStatusRef.current = DocumentEditStatus.Unready
+      setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
+      availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
     }, []),
   })
 
@@ -198,13 +211,13 @@ export const useDocumentChannel = <TRealtimeState>({
   // Update throttle to the requested throttle
   // We want to begin with throttle 0 to get subscribe message out as soon as possible, but change to the requested throttle afterwards
   useEffect(() => {
-    if (status !== DocumentStatus.Ready) {
+    if (subscriptionStatus !== DocumentSubscriptionStatus.Ready) {
       setThrottle(0)
       return
     }
 
     setThrottle(requestedThrottle)
-  }, [status, requestedThrottle])
+  }, [subscriptionStatus, requestedThrottle])
 
   // On sync message
   const onSyncMessage = useCallback((fragment: Fragment) => {
@@ -233,17 +246,17 @@ export const useDocumentChannel = <TRealtimeState>({
       }
     }
 
-    setStatus(DocumentStatus.Ready)
-    setEditStatus(DocumentEditStatus.Ready)
-    statusRef.current = DocumentStatus.Ready
-    editStatusRef.current = DocumentEditStatus.Ready
+    setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Ready)
+    setAvailabilityStatus(DocumentAvailabilityStatus.Ready)
+    subscriptionStatusRef.current = DocumentSubscriptionStatus.Ready
+    availabilityStatusRef.current = DocumentAvailabilityStatus.Ready
 
     markForLocalSaving()
   }, [])
 
   // On ack message
   const onAckMessage = useCallback((ack: DocumentOperationAckResponse) => {
-    if (statusRef.current !== DocumentStatus.Ready) {
+    if (subscriptionStatusRef.current !== DocumentSubscriptionStatus.Ready) {
       return
     }
 
@@ -350,12 +363,12 @@ export const useDocumentChannel = <TRealtimeState>({
   // On operations message
   const onOpsMessage = useCallback((message: DocumentOperationsResponse) => {
     // All operations that were received in between subscribe and sync are applied when sync completes
-    if (statusRef.current === DocumentStatus.Subscribing) {
+    if (subscriptionStatusRef.current === DocumentSubscriptionStatus.Subscribing) {
       preSyncReceivedOperationsRef.current.push(message)
       return
     }
 
-    if (statusRef.current !== DocumentStatus.Ready) {
+    if (subscriptionStatusRef.current !== DocumentSubscriptionStatus.Ready) {
       return
     }
 
@@ -388,10 +401,12 @@ export const useDocumentChannel = <TRealtimeState>({
   const patch = useCallback(
     (fn: DocumentPatch<TRealtimeState>): void => {
       if (
-        editStatusRef.current !== DocumentEditStatus.Ready &&
-        editStatusRef.current !== DocumentEditStatus.ReadyLocal
+        availabilityStatusRef.current !== DocumentAvailabilityStatus.Ready &&
+        availabilityStatusRef.current !== DocumentAvailabilityStatus.ReadyLocal
       ) {
-        console.warn(`Cannot patch document when document edit status is ${editStatusRef.current}.`)
+        console.warn(
+          `Cannot patch document when document edit status is ${availabilityStatusRef.current}.`,
+        )
         return
       }
       localStore.patch(fn)
@@ -425,6 +440,7 @@ export const useDocumentChannel = <TRealtimeState>({
       const chunk = minifiedOperations.slice(i, i + MaxOpsPerMessage)
       groupedMessages.push({
         messageId: uniqueId(),
+        documentId: documentIdRef.current!,
         type: OpsMessageType,
         operations: chunk,
       })
@@ -482,15 +498,15 @@ export const useDocumentChannel = <TRealtimeState>({
   useEffect(() => {
     preSyncReceivedOperationsRef.current = []
 
-    if (webSocketStatus !== RealtimeWebSocketStatus.Open) {
-      setStatus(DocumentStatus.Unready)
-      statusRef.current = DocumentStatus.Unready
+    if (connectionStatus !== RealtimeConnectionStatus.Open) {
+      setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Unready)
+      subscriptionStatusRef.current = DocumentSubscriptionStatus.Unready
 
       // If autosave is disabled or editing is not ready, either remote or local, we reset the stores
       if (
         !config.autosave.enabled ||
-        (editStatusRef.current !== DocumentEditStatus.Ready &&
-          editStatusRef.current !== DocumentEditStatus.ReadyLocal)
+        (availabilityStatusRef.current !== DocumentAvailabilityStatus.Ready &&
+          availabilityStatusRef.current !== DocumentAvailabilityStatus.ReadyLocal)
       ) {
         conflictsIdsRef.current = []
         unackedOperationsRef.current = []
@@ -505,23 +521,27 @@ export const useDocumentChannel = <TRealtimeState>({
           fragmentIdToPath: undefined as any,
         })
 
-        setEditStatus(DocumentEditStatus.Unready)
-        editStatusRef.current = DocumentEditStatus.Unready
+        setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
+        availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
       } else {
-        setEditStatus(DocumentEditStatus.ReadyLocal)
-        editStatusRef.current = DocumentEditStatus.ReadyLocal
+        setAvailabilityStatus(DocumentAvailabilityStatus.ReadyLocal)
+        availabilityStatusRef.current = DocumentAvailabilityStatus.ReadyLocal
       }
       return
     }
 
-    setStatus(DocumentStatus.Subscribing)
-    statusRef.current = DocumentStatus.Subscribing
-    sendMessage({ messageId: uniqueId(), type: 'subscribe' })
-  }, [webSocketStatus])
+    setSubscriptionSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
+    subscriptionStatusRef.current = DocumentSubscriptionStatus.Subscribing
+    sendMessage({
+      messageId: uniqueId(),
+      documentId: documentIdRef.current!,
+      type: 'subscribe',
+    })
+  }, [connectionStatus])
 
   return {
-    status,
-    editStatus,
+    subscriptionStatus,
+    availabilityStatus,
     useStore: localStore.useStore,
     patch,
     subscribe: localStore.subscribe,

@@ -1,14 +1,18 @@
 import {
   useCollaborators,
   useConnectionStatus,
-  useDocumentStatus,
   useMe,
   usePatchMe,
+  usePresenceStatus,
 } from '@/realtime.config'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect } from 'react'
 import { shallow } from 'zustand/shallow'
-import { RealtimeConnectionStatus, RealtimeDocumentStatus } from '@inrealtime/react'
+import {
+  RealtimeConnectionStatus,
+  RealtimeDocumentStatus,
+  RealtimePresenceStatus,
+} from '@inrealtime/react'
 
 const emojis = [
   '🥰',
@@ -46,7 +50,7 @@ const formatEmojio = (emoji: string) => {
 }
 
 export const Avatars = () => {
-  const connectionStatus = useConnectionStatus()
+  const presenceStatus = usePresenceStatus()
 
   const patchMe = usePatchMe()
 
@@ -69,10 +73,10 @@ export const Avatars = () => {
   }, [patchMe])
 
   useEffect(() => {
-    if (connectionStatus === RealtimeDocumentStatus.Ready && !myEmoji) {
+    if (presenceStatus === RealtimePresenceStatus.Ready && !myEmoji) {
       updateMyEmoji()
     }
-  }, [connectionStatus])
+  }, [presenceStatus])
 
   const avatarClassName =
     'h-8 w-8 bg-neutral-100 border border-neutral-200 rounded-full flex items-center justify-center -ml-1 shadow-md cursor-default'
@@ -105,7 +109,7 @@ export const Avatars = () => {
           ))}
         </AnimatePresence>
       </div>
-      {connectionStatus === RealtimeConnectionStatus.Ready && (
+      {presenceStatus === RealtimePresenceStatus.Ready && (
         <div className='text-neutral-500 text-sm'>
           <span className='font-semibold'>{connected}</span> {connected === 1 ? 'user' : 'users'}{' '}
           connected

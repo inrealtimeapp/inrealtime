@@ -38,6 +38,7 @@ export const applyRemoteOperationsToStores = (
     {
       messageId: '',
       type: 'ops',
+      documentId: '',
       operations: minifiedOperations,
     },
   ]
