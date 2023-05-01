@@ -1,6 +1,5 @@
 import React, { MutableRefObject } from 'react'
 
-import { Patch, Subscribe, UseStore } from './channels/document/store/types'
 import {
   Broadcast,
   PatchMe,
@@ -17,7 +16,6 @@ import { RealtimeConnectionStatus } from './socket/types'
 import { UseChannel } from './socket/useWebSocket'
 import { RealtimeGroupConnectionOptions } from './types'
 import { useRealtimeConnection } from './useRealtimeConnection'
-import { RealtimeDocumentStatus, useRealtimeDocument } from './useRealtimeDocument'
 
 export type RealtimeGroupContextProps<TRealtimePresenceData> = {
   connectionStatus: RealtimeConnectionStatus
@@ -36,33 +34,15 @@ export type RealtimeGroupContextProps<TRealtimePresenceData> = {
   }
 }
 
-export type RealtimeDocumentContextProps<TRealtimeState> = {
-  documentStatus: RealtimeDocumentStatus
-  useStore: UseStore<TRealtimeState>
-  patch: Patch<TRealtimeState>
-  subscribe: Subscribe<TRealtimeState>
-}
-
 type RealtimeGroupProviderProps = {
   children: React.ReactNode
 } & RealtimeGroupConnectionOptions
 
-type RealtimeDocumentProviderProps = {
-  children: React.ReactNode
-  documentId?: string | undefined
-}
-
-type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
+type RealtimeGroupContextCollection<TRealtimePresenceData> = {
   RealtimeGroupProvider(props: RealtimeGroupProviderProps): JSX.Element
-  RealtimeDocumentProvider(props: RealtimeDocumentProviderProps): JSX.Element
   useRealtimeGroupContext(): RealtimeGroupContextProps<TRealtimePresenceData>
-  useRealtimeDocumentContext(): RealtimeDocumentContextProps<TRealtimeState>
   useConnectionStatus(): RealtimeConnectionStatus
   usePresenceStatus(): RealtimePresenceStatus
-  useDocumentStatus(): RealtimeDocumentStatus
-  useStore: UseStore<TRealtimeState>
-  usePatch(): Patch<TRealtimeState>
-  useSubscribe(): Subscribe<TRealtimeState>
   useCollaborators: UseCollaborators<TRealtimePresenceData>
   useSubscribeCollaborators(): SubscribeCollaborators<TRealtimePresenceData>
   useMe: UseMe<TRealtimePresenceData>
@@ -73,14 +53,10 @@ type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
 }
 
 export const createRealtimeGroupContext = <
-  TRealtimeState,
   TRealtimePresenceData,
->(): RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> => {
+>(): RealtimeGroupContextCollection<TRealtimePresenceData> => {
   const RealtimeGroupContext = React.createContext<Partial<
     RealtimeGroupContextProps<TRealtimePresenceData>
-  > | null>(null)
-  const RealtimeDocumentContext = React.createContext<Partial<
-    RealtimeDocumentContextProps<TRealtimeState>
   > | null>(null)
 
   const RealtimeGroupProvider = ({
@@ -144,36 +120,6 @@ export const createRealtimeGroupContext = <
     ) as RealtimeGroupContextProps<TRealtimePresenceData>
   }
 
-  const RealtimeDocumentProvider = ({ children, documentId }: RealtimeDocumentProviderProps) => {
-    const { connectionStatus, _package } = useRealtimeGroupContext()
-    if (_package === null) {
-      throw new Error('No RealtimeGroupProvider provided')
-    }
-
-    const { documentStatus, useStore, patch, subscribe } = useRealtimeDocument<TRealtimeState>({
-      connectionStatus,
-      documentId,
-      ..._package,
-    })
-
-    return (
-      <RealtimeDocumentContext.Provider
-        value={{
-          documentStatus,
-          useStore,
-          patch,
-          subscribe,
-        }}
-      >
-        {children}
-      </RealtimeDocumentContext.Provider>
-    )
-  }
-
-  const useRealtimeDocumentContext = () => {
-    return React.useContext(RealtimeDocumentContext) as RealtimeDocumentContextProps<TRealtimeState>
-  }
-
   const useConnectionStatus = () => {
     const { connectionStatus } = useRealtimeGroupContext()
 
@@ -192,49 +138,6 @@ export const createRealtimeGroupContext = <
     }
 
     return presenceStatus
-  }
-
-  const useDocumentStatus = () => {
-    const { documentStatus } = useRealtimeDocumentContext()
-
-    if (documentStatus === null) {
-      throw new Error('No RealtimeProvider provided')
-    }
-
-    return documentStatus
-  }
-
-  const useStore = (
-    selector?: (root: TRealtimeState) => any,
-    equalityFn?: ((a: any, b: any) => boolean) | undefined,
-  ) => {
-    const { useStore } = useRealtimeDocumentContext()
-
-    if (useStore === null) {
-      throw new Error('No RealtimeProvider provided')
-    }
-
-    return selector ? useStore(selector, equalityFn) : useStore()
-  }
-
-  const usePatch = (): Patch<TRealtimeState> => {
-    const { patch } = useRealtimeDocumentContext()
-
-    if (patch === null) {
-      throw new Error('No RealtimeProvider provided')
-    }
-
-    return patch
-  }
-
-  const useSubscribe = (): Subscribe<TRealtimeState> => {
-    const { subscribe } = useRealtimeDocumentContext()
-
-    if (subscribe === null) {
-      throw new Error('No RealtimeProvider provided')
-    }
-
-    return subscribe
   }
 
   const useCollaborators = (
@@ -315,15 +218,9 @@ export const createRealtimeGroupContext = <
 
   return {
     RealtimeGroupProvider,
-    RealtimeDocumentProvider,
     useRealtimeGroupContext,
-    useRealtimeDocumentContext,
     useConnectionStatus,
     usePresenceStatus,
-    useDocumentStatus,
-    useStore,
-    usePatch,
-    useSubscribe,
     useCollaborators,
     useSubscribeCollaborators,
     useMe,

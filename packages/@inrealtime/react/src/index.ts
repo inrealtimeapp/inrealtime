@@ -5,10 +5,10 @@ export type { GetRealtimeAuthToken } from './core'
 export type { PresenceClient } from './core/types/presence'
 export { createRealtimeContext, RealtimeContextProps } from './createRealtimeContext'
 export {
-  createRealtimeGroupContext,
+  createRealtimeDocumentContext,
   RealtimeDocumentContextProps,
-  RealtimeGroupContextProps,
-} from './createRealtimeGroupContext'
+} from './createRealtimeDocumentContext'
+export { createRealtimeGroupContext, RealtimeGroupContextProps } from './createRealtimeGroupContext'
 export { RealtimeConnectionStatus } from './socket/types'
 export { useAutosave } from './useAutosave'
 export { useRealtime } from './useRealtime'

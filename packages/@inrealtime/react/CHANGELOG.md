@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated group context creation
+
 ## 0.2.0
 
 ### Minor Changes
