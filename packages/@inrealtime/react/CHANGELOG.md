@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated message grouping. Updated unsubscribing and resubscribing"
+
 ## 0.2.1
 
 ### Patch Changes

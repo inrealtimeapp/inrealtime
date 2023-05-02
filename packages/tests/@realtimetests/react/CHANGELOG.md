@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated message grouping. Updated unsubscribing and resubscribing"
+
 ## 0.1.6
 
 ### Patch Changes
