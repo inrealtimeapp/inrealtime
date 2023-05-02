@@ -1,5 +1,35 @@
 # @realtimetests/react
 
+## 0.1.6
+
+### Patch Changes
+
+- Test
+
+## 0.1.5
+
+### Patch Changes
+
+- test
+
+## 0.1.4
+
+### Patch Changes
+
+- test
+
+## 0.1.3
+
+### Patch Changes
+
+- Test
+
+## 0.1.2
+
+### Patch Changes
+
+- Fixes to changing document ids
+
 ## 0.1.1
 
 ### Patch Changes

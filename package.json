@@ -21,6 +21,7 @@
     "dev": "turbo run dev",
     "dev:todo": "turbo run dev --filter=inrealtime-examples-todo...",
     "dev:stress": "turbo run dev --filter=inrealtime-tests-stress...",
+    "dev:group": "turbo run dev --filter=inrealtime-tests-group-docs...",
     "pre-publish-packages": "changeset",
     "publish-packages": "turbo run build --filter=@inrealtime/react lint test && turbo run build --filter=@realtimetests/react && changeset version && changeset publish"
   },

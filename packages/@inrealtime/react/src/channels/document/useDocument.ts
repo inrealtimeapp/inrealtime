@@ -86,10 +86,6 @@ export const useDocumentChannel = <TRealtimeState>({
   const subscriptionIdRef = useRef<string>()
   const subscribedToDocumentIdRef = useRef<string>()
 
-  useEffect(() => {
-    documentIdRef.current = documentId
-  }, [documentId])
-
   // Send operations to the channel
   const sendOperations = useCallback((request: DocumentOperationsRequest) => {
     const conflicts: string[] = []
@@ -127,11 +123,7 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // On local operations we want to send messages to the channel
   const onLocalPatchOperations = useCallback((requests: DocumentOperationRequest[]) => {
-    if (
-      (availabilityStatusRef.current !== DocumentAvailabilityStatus.Ready &&
-        availabilityStatusRef.current !== DocumentAvailabilityStatus.ReadyLocal) ||
-      requests.length === 0
-    ) {
+    if (requests.length === 0) {
       return
     }
 
@@ -254,8 +246,8 @@ export const useDocumentChannel = <TRealtimeState>({
     }
 
     setSubscriptionStatus(DocumentSubscriptionStatus.Ready)
-    setAvailabilityStatus(DocumentAvailabilityStatus.Ready)
     subscriptionStatusRef.current = DocumentSubscriptionStatus.Ready
+    setAvailabilityStatus(DocumentAvailabilityStatus.Ready)
     availabilityStatusRef.current = DocumentAvailabilityStatus.Ready
 
     markForLocalSaving()
@@ -462,27 +454,35 @@ export const useDocumentChannel = <TRealtimeState>({
       return notOpsMessages
     }
 
-    // Flattened list of operations
-    const operations = ([] as DocumentOperationRequest[]).concat(
-      ...opsMessages.map((m) => m.operations),
-    )
-
-    // Minified operations
-    const minifiedOperations = minifyOperations(operations) as DocumentOperationRequest[]
-
-    // Create grouped messages based on chunk size
     const groupedMessages: DocumentOperationsRequest[] = []
-    for (let i = 0; i < minifiedOperations.length; i += MaxOpsPerMessage) {
-      const chunk = minifiedOperations.slice(i, i + MaxOpsPerMessage)
-      groupedMessages.push({
-        messageId: uniqueId(),
-        type: OpsMessageType,
-        subId: subscriptionIdRef.current!,
-        operations: chunk,
-      })
-    }
+    const opsMessagesBySubIdMap = groupBy(opsMessages, (m) => m.subId)
+    opsMessagesBySubIdMap.forEach((opsMessagesBySubId, subId) => {
+      // Flattened list of operations
+      const operations = ([] as DocumentOperationRequest[]).concat(
+        ...opsMessagesBySubId.map((m) => m.operations),
+      )
 
-    if (minifiedOperations.length > 0) {
+      // Minified operations
+      const minifiedOperations = minifyOperations(operations) as DocumentOperationRequest[]
+      if (minifiedOperations.length === 0) {
+        return
+      }
+
+      // Create grouped messages based on chunk size
+      for (let i = 0; i < minifiedOperations.length; i += MaxOpsPerMessage) {
+        const chunk = minifiedOperations.slice(i, i + MaxOpsPerMessage)
+        groupedMessages.push({
+          messageId: uniqueId(),
+          type: OpsMessageType,
+          subId,
+          operations: chunk,
+        })
+      }
+    })
+
+    // Insert the grouped messages into the unacked operations list
+    // We insert them at the first opsMessages index so that they are acked in the correct order
+    if (groupedMessages.length > 0) {
       const opsIndex = unackedOperationsRef.current.indexOf(opsMessages[0])
       unackedOperationsRef.current.splice(opsIndex < 0 ? 0 : opsIndex, 0, ...groupedMessages)
     }
@@ -495,7 +495,7 @@ export const useDocumentChannel = <TRealtimeState>({
       (opMessage) => !opsMessages.includes(opMessage),
     )
 
-    if (minifiedOperations.length > 0) {
+    if (groupedMessages.length > 0) {
       return [...notOpsMessages, ...groupedMessages]
     }
     return notOpsMessages
@@ -513,12 +513,53 @@ export const useDocumentChannel = <TRealtimeState>({
     sendMessageRef.current = sendMessage
   }, [sendMessage])
 
+  // Check whether the document is offline capable
   const isOfflineCapable = useCallback(() => {
     return (
       config.autosave.enabled &&
       (availabilityStatusRef.current === DocumentAvailabilityStatus.Ready ||
         availabilityStatusRef.current === DocumentAvailabilityStatus.ReadyLocal)
     )
+  }, [])
+
+  // Make stores unavailable
+  const resetStoresToUnavailable = useCallback(() => {
+    conflictsIdsRef.current = []
+    unackedOperationsRef.current = []
+    localStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+    remoteStore.setRoot({
+      document: undefined as any,
+      fragment: undefined as any,
+      fragmentIdToPath: undefined as any,
+    })
+
+    setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
+    availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
+
+    subscriptionIdRef.current = undefined as any
+    subscribedToDocumentIdRef.current = undefined as any
+  }, [])
+
+  // Make stores locally available
+  const setStoreLocallyAvailable = useCallback(() => {
+    setAvailabilityStatus(DocumentAvailabilityStatus.ReadyLocal)
+    availabilityStatusRef.current = DocumentAvailabilityStatus.ReadyLocal
+  }, [])
+
+  // Subscribe do a document
+  const subscribe = useCallback((docId: string) => {
+    subscriptionIdRef.current = uniqueId(5)
+    subscribedToDocumentIdRef.current = docId
+    sendMessage({
+      messageId: uniqueId(),
+      type: 'subscribe',
+      docId: subscribedToDocumentIdRef.current!,
+      subId: subscriptionIdRef.current!,
+    })
   }, [])
 
   // On websocket changes
@@ -529,23 +570,9 @@ export const useDocumentChannel = <TRealtimeState>({
       subscriptionStatusRef.current = DocumentSubscriptionStatus.Unready
 
       if (!isOfflineCapable()) {
-        conflictsIdsRef.current = []
-        unackedOperationsRef.current = []
-        localStore.setRoot({
-          document: undefined as any,
-          fragment: undefined as any,
-          fragmentIdToPath: undefined as any,
-        })
-        remoteStore.setRoot({
-          document: undefined as any,
-          fragment: undefined as any,
-          fragmentIdToPath: undefined as any,
-        })
-        setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
-        availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
+        resetStoresToUnavailable()
       } else {
-        setAvailabilityStatus(DocumentAvailabilityStatus.ReadyLocal)
-        availabilityStatusRef.current = DocumentAvailabilityStatus.ReadyLocal
+        setStoreLocallyAvailable()
       }
 
       return
@@ -562,7 +589,13 @@ export const useDocumentChannel = <TRealtimeState>({
 
   // Reset stores on document change. Also, possibly re-subscriptions
   useEffect(() => {
-    if (subscriptionIdRef.current) {
+    documentIdRef.current = documentId
+
+    // Unsubscribe from previous document
+    if (
+      subscriptionIdRef.current &&
+      connectionStatusRef.current === RealtimeConnectionStatus.Open
+    ) {
       sendMessage({
         messageId: uniqueId(),
         type: 'unsubscribe',
@@ -570,33 +603,24 @@ export const useDocumentChannel = <TRealtimeState>({
       })
     }
 
-    conflictsIdsRef.current = []
-    unackedOperationsRef.current = []
-    localStore.setRoot({
-      document: undefined as any,
-      fragment: undefined as any,
-      fragmentIdToPath: undefined as any,
-    })
-    remoteStore.setRoot({
-      document: undefined as any,
-      fragment: undefined as any,
-      fragmentIdToPath: undefined as any,
-    })
-    setAvailabilityStatus(DocumentAvailabilityStatus.Unready)
-    availabilityStatusRef.current = DocumentAvailabilityStatus.Unready
-    subscriptionIdRef.current = undefined as any
-    subscribedToDocumentIdRef.current = undefined as any
+    resetStoresToUnavailable()
 
-    // Resubscribe
-    if (connectionStatusRef.current === RealtimeConnectionStatus.Open) {
-      setSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
-      subscriptionStatusRef.current = DocumentSubscriptionStatus.Subscribing
-    } else {
+    if (!documentId || connectionStatusRef.current !== RealtimeConnectionStatus.Open) {
       setSubscriptionStatus(DocumentSubscriptionStatus.Unready)
       subscriptionStatusRef.current = DocumentSubscriptionStatus.Unready
+      return
     }
+
+    // Change document to subscribe to
+    if (subscriptionStatusRef.current === DocumentSubscriptionStatus.Subscribing) {
+      subscribe(documentId)
+    }
+
+    setSubscriptionStatus(DocumentSubscriptionStatus.Subscribing)
+    subscriptionStatusRef.current = DocumentSubscriptionStatus.Subscribing
   }, [documentId])
 
+  // Subscribe to document
   useEffect(() => {
     if (
       subscriptionStatus !== DocumentSubscriptionStatus.Subscribing ||
@@ -605,14 +629,7 @@ export const useDocumentChannel = <TRealtimeState>({
       return
     }
 
-    subscriptionIdRef.current = uniqueId(5)
-    subscribedToDocumentIdRef.current = documentIdRef.current
-    sendMessage({
-      messageId: uniqueId(),
-      type: 'subscribe',
-      docId: subscribedToDocumentIdRef.current!,
-      subId: subscriptionIdRef.current!,
-    })
+    subscribe(documentIdRef.current!)
   }, [subscriptionStatus])
 
   return {
@@ -622,4 +639,18 @@ export const useDocumentChannel = <TRealtimeState>({
     patch,
     subscribe: localStore.subscribe,
   }
+}
+
+const groupBy = <T>(list: T[], keyGetter: (d: T) => any): Map<string, T[]> => {
+  const map = new Map<string, T>()
+  list.forEach((item) => {
+    const key = keyGetter(item)
+    const collection = map.get(key)
+    if (!collection) {
+      map.set(key, [item])
+    } else {
+      collection.push(item)
+    }
+  })
+  return map
 }
