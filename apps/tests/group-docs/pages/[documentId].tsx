@@ -56,9 +56,9 @@ function Todo({ documentId }: { documentId: string }) {
 
   // Initialize Slate
   useEffect(() => {
-    // if (status !== RealtimeDocumentStatus.Ready) {
-    //   return
-    // }
+    if (status !== RealtimeDocumentStatus.Ready) {
+      return
+    }
 
     if (!documentId) {
       return

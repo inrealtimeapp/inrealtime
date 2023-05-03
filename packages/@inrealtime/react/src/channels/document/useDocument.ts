@@ -457,6 +457,12 @@ export const useDocumentChannel = <TRealtimeState>({
     const groupedMessages: DocumentOperationsRequest[] = []
     const opsMessagesBySubIdMap = groupBy(opsMessages, (m) => m.subId)
     opsMessagesBySubIdMap.forEach((opsMessagesBySubId, subId) => {
+      // Filter operations from messages with type 'ops' that are not for the current subscription
+      // We still keep things like subscribes / unsubscribes
+      if (subId !== subscriptionIdRef.current) {
+        opsMessagesBySubId = opsMessagesBySubId.filter((m) => m.type !== OpsMessageType)
+      }
+
       // Flattened list of operations
       const operations = ([] as DocumentOperationRequest[]).concat(
         ...opsMessagesBySubId.map((m) => m.operations),
