@@ -1,11 +1,12 @@
+import { RealtimeDocumentStatus } from '@inrealtime/react'
 import { useWindowSize } from '@react-hookz/web'
+import { KonvaEventObject } from 'konva/lib/Node'
 import { useCallback } from 'react'
-import { Stage, Layer, Rect } from 'react-konva'
+import { Layer, Rect, Stage } from 'react-konva'
+
+import { useDocumentStatus, usePatch, usePatchMe, useStore } from '../../realtime.config'
 import { Avatars } from './Avatars'
 import { Cursors } from './Cursors'
-import { useDocumentStatus, usePatch, useStore } from '../../realtime.config'
-import { RealtimeDocumentStatus } from '@inrealtime/react'
-import { KonvaEventObject } from 'konva/lib/Node'
 
 const colorMap: { [key: string]: string } = {
   red: '#ef4444',
@@ -17,6 +18,7 @@ const colorMap: { [key: string]: string } = {
 export const Canvas = () => {
   const { width, height } = useWindowSize()
   const patch = usePatch()
+  const patchMe = usePatchMe()
   const status = useDocumentStatus()
   const boxes = useStore((root) => root.boxes)
 
@@ -24,6 +26,12 @@ export const Canvas = () => {
     patch((root) => {
       root.boxes[id].active = true
     })
+    patchMe(
+      {
+        cursorActive: false,
+      },
+      { replace: false },
+    )
   }, [])
 
   const onBoxMove = useCallback((id: string, evt: KonvaEventObject<DragEvent>) => {
@@ -37,6 +45,12 @@ export const Canvas = () => {
     patch((root) => {
       root.boxes[id].active = false
     })
+    patchMe(
+      {
+        cursorActive: true,
+      },
+      { replace: false },
+    )
   }, [])
 
   if (status !== RealtimeDocumentStatus.Ready) {

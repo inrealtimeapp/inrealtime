@@ -1,8 +1,10 @@
-import { useCollaborators, useMe, usePatchMe, usePresenceStatus } from '../../realtime.config'
+import { RealtimePresenceStatus } from '@inrealtime/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect } from 'react'
 import { shallow } from 'zustand/shallow'
-import { RealtimePresenceStatus } from '@inrealtime/react'
+
+import { useCollaborators, useMe, usePatchMe, usePresenceStatus } from '../../realtime.config'
+import { formatEmoji } from '../utils/formatEmoji'
 
 const emojis = [
   '🥰',
@@ -23,22 +25,6 @@ const emojis = [
   '🥳',
 ]
 
-const encodeEmoji = (emoji: string) => {
-  return emoji?.codePointAt(0)?.toString(16) ?? ''
-}
-
-const decodeEmoji = (hex: any) => {
-  if (hex === undefined) {
-    return ''
-  }
-
-  return String.fromCodePoint(parseInt(`${hex}`, 16))
-}
-
-const formatEmojio = (emoji: string) => {
-  return decodeEmoji(encodeEmoji(emoji))
-}
-
 export const Avatars = () => {
   const presenceStatus = usePresenceStatus()
 
@@ -48,14 +34,14 @@ export const Avatars = () => {
     (collaborators) =>
       collaborators.map((c) => ({
         clientId: c.clientId,
-        emoji: c.data?.emoji ?? '☺️',
+        emoji: c.data?.emoji ?? '💀',
       })),
     shallow,
   )
   const myEmoji = useMe((me) => me.data?.emoji)
 
   const updateMyEmoji = useCallback(() => {
-    const emoji = formatEmojio(emojis[Math.floor(Math.random() * emojis.length)])
+    const emoji = formatEmoji(emojis[Math.floor(Math.random() * emojis.length)])
 
     patchMe({
       emoji,
@@ -81,7 +67,7 @@ export const Avatars = () => {
             role='img'
             className={`${avatarClassName} bg-pink-500/20 ring-2 ring-pink-500/50 ring-offset-2 ring-offset-neutral-950`}
           >
-            {formatEmojio(myEmoji)}
+            {formatEmoji(myEmoji)}
           </div>
         )}
         <AnimatePresence>
@@ -94,7 +80,7 @@ export const Avatars = () => {
               role='img'
               className={`${avatarClassName}`}
             >
-              {formatEmojio(emoji)}
+              {formatEmoji(emoji)}
             </motion.div>
           ))}
         </AnimatePresence>

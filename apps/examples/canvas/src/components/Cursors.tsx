@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { RealtimePresenceStatus } from '@inrealtime/react'
 import { IconPointer } from '@tabler/icons-react'
 import { motion, useWillChange } from 'framer-motion'
-import { useCollaborators, usePatchMe, usePresenceStatus } from '../../realtime.config'
-import { RealtimePresenceStatus } from '@inrealtime/react'
+import { useEffect, useRef } from 'react'
+
+import { useCollaborators, useMe, usePatchMe, usePresenceStatus } from '../../realtime.config'
+import { formatEmoji } from '../utils/formatEmoji'
 
 interface CursorProps {
   x: number
@@ -23,7 +25,7 @@ const Cursor = ({ x = 0, y = 0, emoji, active = false }: CursorProps) => {
     >
       <div className={`relative ${active ? 'opacity-100' : 'opacity-0'}`}>
         <IconPointer size={12} className='absolute text-pink-500/20 fill-pink-500/80' />
-        <div className='absolute text-sm font-semibold top-1 left-3.5'>{emoji}</div>
+        <div className='absolute text-sm font-semibold top-1 left-3.5'>{formatEmoji(emoji)}</div>
       </div>
     </motion.div>
   )
@@ -32,12 +34,16 @@ const Cursor = ({ x = 0, y = 0, emoji, active = false }: CursorProps) => {
 export const Cursors = () => {
   const collaborators = useCollaborators()
   const status = usePresenceStatus()
+  const cursorActive = useMe((root) => root?.data?.cursorActive)
+  const cursorActiveRef = useRef(false)
   const patchMe = usePatchMe()
 
   const onCursorMoveRef = useRef<EventListener>()
   const onCursorLeaveRef = useRef<EventListener>()
+  const onCursorEnterRef = useRef<EventListener>()
   const moveRef = useRef((e: Event) => onCursorMoveRef.current?.(e))
   const leaveRef = useRef((e: Event) => onCursorLeaveRef.current?.(e))
+  const enterRef = useRef((e: Event) => onCursorEnterRef.current?.(e))
 
   useEffect(() => {
     if (status !== RealtimePresenceStatus.Ready) {
@@ -45,13 +51,25 @@ export const Cursors = () => {
     }
 
     onCursorMoveRef.current = (e: Event) => {
+      if (!cursorActiveRef.current) {
+        return
+      }
+
       patchMe({
-        cursorActive: true,
         cursor: {
           x: (e as any).x,
           y: (e as any).y,
         },
       })
+    }
+
+    onCursorEnterRef.current = () => {
+      patchMe(
+        {
+          cursorActive: true,
+        },
+        { replace: false },
+      )
     }
 
     onCursorLeaveRef.current = () => {
@@ -70,15 +88,21 @@ export const Cursors = () => {
     if (elem) {
       elem.addEventListener('mousemove', moveRef.current)
       elem.addEventListener('mouseleave', leaveRef.current)
+      elem.addEventListener('mouseenter', enterRef.current)
     }
 
     return () => {
       if (elem) {
         elem.removeEventListener('mousemove', moveRef.current)
         elem.removeEventListener('mouseleave', leaveRef.current)
+        elem.removeEventListener('mouseenter', enterRef.current)
       }
     }
   }, [])
+
+  useEffect(() => {
+    cursorActiveRef.current = !!cursorActive
+  }, [cursorActive])
 
   return (
     <div className='absolute top-0 bottom-0 left-0 right-0 bg-transparent z-10 pointer-events-none'>
