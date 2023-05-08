@@ -69,7 +69,7 @@ export const usePresenceChannel = <TRealtimePresenceData>({
 
               // Send presence message update only if presence data has changed from '{}'
               if (
-                !presence.data &&
+                presence.data &&
                 isMap(presence.data) &&
                 Object.keys(presence.data as { [key: string]: any }).length === 0
               ) {
@@ -276,7 +276,17 @@ export const usePresenceChannel = <TRealtimePresenceData>({
 
   // Initial sync
   useEffect(() => {
-    if (connectionStatus !== RealtimeConnectionStatus.Open) {
+    if (
+      connectionStatus === RealtimeConnectionStatus.Open &&
+      statusRef.current !== RealtimePresenceStatus.Unready
+    ) {
+      return
+    }
+
+    if (
+      connectionStatus !== RealtimeConnectionStatus.Open &&
+      connectionStatus !== RealtimeConnectionStatus.Authenticating
+    ) {
       setStatus(RealtimePresenceStatus.Unready)
       statusRef.current = RealtimePresenceStatus.Unready
       reset()

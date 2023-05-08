@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import { ChangeEvent, FormEvent, useCallback, useState } from 'react'
 
 import { Avatars, Item } from '@/components'
-import { usePatch, useDocumentStatus, useStore } from '@/realtime.config'
+import { usePatch, useDocumentStatus, useStore, useBroadcastListener, useBroadcast } from "@/realtime.config";
 import { RealtimeDocumentStatus } from '@inrealtime/react'
 const inter = Inter({ subsets: ['latin'] })
 
@@ -64,10 +64,11 @@ export default function Home() {
 
   // TODO: Broadcasting example
   // const broadcast = useBroadcast()
-  // useBroadcastListener((event) => {
-  //   console.log('event', event)
-  // })
-  // broadcast('exampleEvent', { data: { example: 'data' } })
+  useBroadcastListener((event) => {
+    event.console.log('event', event.)
+  })
+  const broadcast = useBroadcast()
+  broadcast('exampleEvent', { data: { example: 'data' } })
 
   return (
     <main className={`${inter.className}} min-h-screen wrapper`}>

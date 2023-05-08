@@ -1,5 +1,41 @@
 # @realtimetests/react
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated presence to correctly display status"
+
+## 0.1.12
+
+### Patch Changes
+
+- t
+
+## 0.1.11
+
+### Patch Changes
+
+- test
+
+## 0.1.10
+
+### Patch Changes
+
+- t
+
+## 0.1.9
+
+### Patch Changes
+
+- T
+
+## 0.1.8
+
+### Patch Changes
+
+- Bug fixes in multi docs connections
+
 ## 0.1.7
 
 ### Patch Changes

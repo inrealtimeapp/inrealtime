@@ -1,5 +1,17 @@
 # @inrealtime/react
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated presence to correctly display status"
+
+## 0.2.3
+
+### Patch Changes
+
+- Bug fixes in multi docs connections
+
 ## 0.2.2
 
 ### Patch Changes

@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inrealtime/react": "^0.2.3",
+    "@inrealtime/react": "^0.2.4",
     "@react-hookz/web": "^23.0.0",
     "@tabler/icons-react": "^2.17.0",
+    "framer-motion": "10.11.2",
     "dayjs": "^1.11.7",
     "konva": "^9.0.1",
     "lodash": "^4.17.21",
