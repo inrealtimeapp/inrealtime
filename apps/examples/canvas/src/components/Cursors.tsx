@@ -54,7 +54,7 @@ export const Cursors = () => {
       })
     }
 
-    onCursorLeaveRef.current = (e: Event) => {
+    onCursorLeaveRef.current = () => {
       patchMe(
         {
           cursorActive: false,
