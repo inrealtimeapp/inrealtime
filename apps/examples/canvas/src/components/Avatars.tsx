@@ -61,21 +61,21 @@ export const Avatars = () => {
   return (
     <div className='flex flex-col gap-1.5'>
       <div className='mx-2 flex flex-row-reverse items-center'>
-        {!!myEmoji && (
+        {presenceStatus === RealtimePresenceStatus.Ready && (
           <div
             role='img'
             className={`${avatarClassName} bg-pink-500/20 ring-2 ring-pink-500/50 ring-offset-2 ring-offset-neutral-950`}
           >
-            {formatEmoji(myEmoji)}
+            {formatEmoji(myEmoji ?? '💀')}
           </div>
         )}
         <AnimatePresence>
           {collaboratorData?.map(({ clientId, emoji }) => (
             <motion.div
+              key={clientId}
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
-              key={clientId}
               role='img'
               className={`${avatarClassName}`}
             >
@@ -85,7 +85,7 @@ export const Avatars = () => {
         </AnimatePresence>
       </div>
       {presenceStatus === RealtimePresenceStatus.Ready && (
-        <div className='text-neutral-500 text-sm'>
+        <div className='text-slate-500 text-xs'>
           <span className='font-semibold'>{connected}</span> {connected === 1 ? 'user' : 'users'}{' '}
           connected
         </div>
