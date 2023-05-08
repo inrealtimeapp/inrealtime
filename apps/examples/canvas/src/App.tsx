@@ -15,7 +15,7 @@ function App() {
     <RealtimeProvider
       documentId={startOfHour}
       publicAuthKey={import.meta.env.VITE_REALTIME_PUBLIC_AUTH_KEY}
-      throttle={50}
+      throttle={15}
     >
       <Canvas />
     </RealtimeProvider>
