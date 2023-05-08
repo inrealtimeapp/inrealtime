@@ -20,6 +20,7 @@
     "deploy": "turbo run deploy",
     "dev": "turbo run dev",
     "dev:todo": "turbo run dev --filter=inrealtime-examples-todo...",
+    "dev:canvas": "turbo run dev --filter=inrealtime-examples-canvas...",
     "dev:stress": "turbo run dev --filter=inrealtime-tests-stress...",
     "dev:group": "turbo run dev --filter=inrealtime-tests-group-docs...",
     "pre-publish-packages": "changeset",

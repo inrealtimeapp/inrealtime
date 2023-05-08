@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    @apply font-sans font-normal text-base text-neutral-50 bg-neutral-950;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply bg-pink-500 text-neutral-50 h-9 rounded px-3 text-sm font-semibold flex items-center justify-center hover:brightness-110 active:scale-95 transition-all [&>svg:last-child]:-mr-1 [&>svg:last-child]:ml-1 [&>svg:first-child]:-ml-1 [&>svg:first-child]:mr-1 disabled:opacity-60 disabled:pointer-events-none;
+  }
+
+  .icon-btn {
+    @apply text-neutral-600 hover:text-neutral-900 h-9 w-9 rounded flex items-center justify-center bg-neutral-400 bg-opacity-0 hover:bg-opacity-20 active:scale-95 transition-all disabled:opacity-60 disabled:pointer-events-none;
+  }
+
+  .input {
+    @apply h-9 py-0 px-3 text-sm font-medium text-neutral-900 rounded border bg-neutral-100 border-neutral-300 dark:border-neutral-600 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:outline-none focus:ring-2 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-neutral-900 ring-neutral-300 dark:ring-neutral-600 disabled:opacity-60;
+  }
+
+  .toggle {
+    @apply w-11 h-6 flex items-center flex-shrink-0 p-0.5 bg-neutral-500 rounded-full duration-300 ease-in-out peer-checked:bg-pink-500 after:w-5 after:h-5 after:bg-neutral-50 after:rounded-full after:duration-300 peer-checked:after:translate-x-5 group-hover:after:scale-105 peer-disabled:opacity-50;
+  }
+
+  .checkbox {
+    @apply relative h-5 w-5 appearance-none rounded-md border border-neutral-500/60 outline-none transition-colors checked:border-pink-500 checked:bg-pink-500 after:transition-transform after:scale-0 checked:after:scale-100 after:absolute after:top-[1px] after:left-[5px] after:block after:h-3 after:w-2 after:rotate-45 after:border-r-[2px] after:border-b-[2px] after:border-neutral-50 after:content-[''] hover:cursor-pointer dark:checked:border-pink-500 dark:checked:bg-pink-500;
+  }
+
+  .wrapper {
+    @apply mx-auto px-5 py-8 sm:py-12 lg:py-20 w-full max-w-lg sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-7xl;
+  }
+
+  .skeleton {
+    @apply bg-neutral-300 opacity-10 animate-pulse;
+  }
+}
