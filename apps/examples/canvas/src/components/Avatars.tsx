@@ -27,7 +27,6 @@ const emojis = [
 
 export const Avatars = () => {
   const presenceStatus = usePresenceStatus()
-
   const patchMe = usePatchMe()
 
   const collaboratorData = useCollaborators(
@@ -46,13 +45,13 @@ export const Avatars = () => {
     patchMe({
       emoji,
     })
-  }, [patchMe])
+  }, [])
 
   useEffect(() => {
     if (presenceStatus === RealtimePresenceStatus.Ready && !myEmoji) {
       updateMyEmoji()
     }
-  }, [presenceStatus])
+  }, [presenceStatus, myEmoji, updateMyEmoji])
 
   const avatarClassName =
     'h-8 w-8 bg-neutral-900 border border-pink-500 rounded-full flex items-center justify-center -ml-1 shadow-md cursor-default'
