@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-const useTabBroadcast = (channelName, onMessage: (data: any) => void) => {
+const useTabBroadcast = (channelName: string, onMessage: (data: any) => void) => {
   const channelRef = useRef<BroadcastChannel>()
 
   const postTabMessage = useCallback((data: any) => {

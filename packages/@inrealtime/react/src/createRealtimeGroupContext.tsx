@@ -1,11 +1,10 @@
 import React, { MutableRefObject } from 'react'
 
+import { Broadcast, UseBroadcastListener } from './channels/broadcast/types'
 import {
-  Broadcast,
   PatchMe,
   SubscribeCollaborators,
   SubscribeMe,
-  UseBroadcastListener,
   UseCollaborators,
   UseMe,
 } from './channels/presence/types'

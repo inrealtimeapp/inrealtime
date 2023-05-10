@@ -23,7 +23,7 @@ export const useCollaboratorStore = <
         patch: (fn: CollaboratorPatch<TRealtimePresenceData>) => {
           set({
             initial: false,
-            data: [...fn({ presences: get().data })], // Create new list for selector
+            data: [...fn({ collaborators: get().data })], // Create new list for selector
           })
         },
         reset: () => {
@@ -77,7 +77,7 @@ export const useCollaboratorStore = <
       },
     ) =>
       (useStoreWithPatchRef.current.subscribe as any)(
-        (root) =>
+        (root: any) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
         listener,
         options,

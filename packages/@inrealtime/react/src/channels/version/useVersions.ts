@@ -10,30 +10,22 @@ import {
 } from '../../core'
 import { RealtimeConnectionStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
-import { PatchMe, SubscribeCollaborators, SubscribeMe, UseCollaborators, UseMe } from './types'
-import { useCollaboratorStore } from './useCollaboratorStore'
-import { usePresenceStore } from './usePresenceStore'
-import { mergeData } from './utils'
+import { SubscribeVersions, UseVersions } from './types'
+import { useVersionsStore } from './useVersionsStore'
 
-export enum RealtimePresenceStatus {
+export enum RealtimeVersionStatus {
   Unready = 'Unready',
   Syncing = 'Syncing',
   Ready = 'Ready',
 }
 
-const ReplaceMessageType = 'replace'
-const UpdateMessageType = 'update'
-
-export type UsePresenceChannel<TRealtimePresenceData> = {
-  status: RealtimePresenceStatus
-  useCollaborators: UseCollaborators<TRealtimePresenceData>
-  subscribeCollaborators: SubscribeCollaborators<TRealtimePresenceData>
-  useMe: UseMe<TRealtimePresenceData>
-  patchMe: PatchMe<TRealtimePresenceData>
-  subscribeMe: SubscribeMe<TRealtimePresenceData>
+export type UseVersionsChannel = {
+  status: RealtimeVersionStatus
+  useVersions: UseVersions
+  subscribeVersions: SubscribeVersions
 }
 
-export const usePresenceChannel = <TRealtimePresenceData>({
+export const usePresenceChannel = ({
   connectionStatus,
   connectionStatusRef,
   useChannel,
@@ -43,20 +35,15 @@ export const usePresenceChannel = <TRealtimePresenceData>({
   connectionStatusRef: MutableRefObject<RealtimeConnectionStatus>
   useChannel: UseChannel
   throttle: number
-}): UsePresenceChannel<TRealtimePresenceData> => {
-  const [status, setStatus] = useState<RealtimePresenceStatus>(RealtimePresenceStatus.Unready)
-  const statusRef = useRef<RealtimePresenceStatus>(RealtimePresenceStatus.Unready)
-
-  // The id of the current client
-  const presenceClientIdRef = useRef<string>()
-  const presenceLoadedRef = useRef<boolean>(false)
+}): UseVersionsChannel => {
+  const [status, setStatus] = useState<RealtimeVersionStatus>(RealtimeVersionStatus.Unready)
+  const statusRef = useRef<RealtimeVersionStatus>(RealtimeVersionStatus.Unready)
 
   // Operations that were received between before sync
   const preSyncMessagesRef = useRef<PresenceClientResponse<TRealtimePresenceData>[]>([])
 
-  // Create the collaborator and presence store
-  const collaboratorStore = useCollaboratorStore<TRealtimePresenceData>()
-  const presenceStore = usePresenceStore<TRealtimePresenceData>()
+  // Create the versions store
+  const versionsStore = useVersionsStore()
 
   // Apply a client message
   const applyPresenceClientResponse = useCallback(
@@ -90,16 +77,16 @@ export const usePresenceChannel = <TRealtimePresenceData>({
             break
           }
 
-          collaboratorStore.patch(({ collaborators }) => {
-            collaborators = collaborators.filter((p) => p.clientId !== response.client.clientId) // Filter to avoid duplicates
-            collaborators.push(response.client)
-            return collaborators
+          collaboratorStore.patch(({ presences }) => {
+            presences = presences.filter((p) => p.clientId !== response.client.clientId) // Filter to avoid duplicates
+            presences.push(response.client)
+            return presences
           })
           break
         case 'client_remove':
-          collaboratorStore.patch(({ collaborators }) => {
-            collaborators = collaborators.filter((p) => p.clientId !== response.clientId)
-            return collaborators
+          collaboratorStore.patch(({ presences }) => {
+            presences = presences.filter((p) => p.clientId !== response.clientId)
+            return presences
           })
           break
         case 'client_replace_metadata':
@@ -110,15 +97,15 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           }
 
           // Collaborators
-          collaboratorStore.patch(({ collaborators }) => {
-            const index = collaborators.findIndex((p) => p.clientId === response.clientId)
+          collaboratorStore.patch(({ presences }) => {
+            const index = presences.findIndex((p) => p.clientId === response.clientId)
             if (index < 0) {
-              return collaborators
+              return presences
             }
 
             // We must replace it for selector to work properly
-            collaborators[index] = { ...collaborators[index], metadata: response.metadata }
-            return collaborators
+            presences[index] = { ...presences[index], metadata: response.metadata }
+            return presences
           })
           break
 
@@ -131,22 +118,22 @@ export const usePresenceChannel = <TRealtimePresenceData>({
           }
 
           // Collaborators
-          collaboratorStore.patch(({ collaborators }) => {
-            const index = collaborators.findIndex((p) => p.clientId === response.clientId)
+          collaboratorStore.patch(({ presences }) => {
+            const index = presences.findIndex((p) => p.clientId === response.clientId)
             if (index < 0) {
-              return collaborators
+              return presences
             }
 
             // We must replace it for selector to work properly
-            collaborators[index] = {
-              ...collaborators[index],
+            presences[index] = {
+              ...presences[index],
               data:
                 response.type === 'client_replace_data'
                   ? response.data
-                  : mergeData(collaborators[index].data, response.data),
+                  : mergeData(presences[index].data, response.data),
               dataUpdatedAt: response.dataUpdatedAt,
             }
-            return collaborators
+            return presences
           })
           break
       }

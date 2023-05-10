@@ -1,7 +1,7 @@
 import { BroadcastEventResponse, PresenceClient } from '../../core'
 
 export type CollaboratorPatch<TRealtimePresenceData> = ({}: {
-  presences: PresenceClient<TRealtimePresenceData>[]
+  collaborators: PresenceClient<TRealtimePresenceData>[]
 }) => PresenceClient<TRealtimePresenceData>[]
 
 export type PresencePatch<TRealtimePresenceData> = ({}: {
@@ -64,11 +64,3 @@ export type PresenceStore<TRealtimePresenceData> = {
   patch: (fn: PresencePatch<TRealtimePresenceData>) => void
   reset: () => void
 }
-
-export type Broadcast = (
-  type: string,
-  options: { data?: any; recipientClientIds?: string[] },
-) => void
-export type UseBroadcastListener = (
-  onEvent: (event: BroadcastEventResponse) => void | Promise<void>,
-) => void

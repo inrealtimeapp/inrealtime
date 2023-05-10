@@ -16,7 +16,7 @@ export default function Home() {
   const randomEnabledRef = useRef(false)
   const [fakeState, setFakeState] = useState(0)
 
-  const { status, useStore, patch, useMe, useCollaborators } = useRealtime<Root, any>({
+  const { connectionStatus, useStore, patch, useMe, useCollaborators } = useRealtime<Root, any>({
     documentId,
     publicAuthKey: process.env.NEXT_PUBLIC_REALTIME_PUBLIC_AUTH_KEY,
     _package: {
@@ -135,7 +135,7 @@ export default function Home() {
           break
       }
     })
-  }, [])
+  }, [patch])
 
   const randomInterval = useRef<NodeJS.Timer>()
   useEffect(() => {
@@ -146,7 +146,7 @@ export default function Home() {
     return () => {
       clearInterval(randomInterval.current!)
     }
-  }, [])
+  }, [doRandom])
 
   const randomDocumentId = () => {
     setDocumentId(`doc-${randomIntFromInterval(0, 10000)}`)
@@ -173,7 +173,7 @@ export default function Home() {
       >
         Random enabled? {randomEnabledRef?.current ? 'yes' : 'no'}
       </div>
-      <div>Status: {status}</div>
+      <div>Connection status: {connectionStatus}</div>
       <div>Document id: {documentId}</div>
       <button onClick={randomDocumentId}>Set random documentId</button>
       <div>Me: {me && JSON.stringify(me)}</div>

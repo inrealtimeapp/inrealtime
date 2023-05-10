@@ -2,7 +2,6 @@ import React from 'react'
 
 import { Patch, Subscribe, UseStore } from './channels/document/store/types'
 import { RealtimeGroupContextProps } from './createRealtimeGroupContext'
-import { RealtimeGroupConnectionOptions } from './types'
 import { RealtimeDocumentStatus, useRealtimeDocument } from './useRealtimeDocument'
 
 export type RealtimeDocumentContextProps<TRealtimeState> = {
@@ -11,10 +10,6 @@ export type RealtimeDocumentContextProps<TRealtimeState> = {
   patch: Patch<TRealtimeState>
   subscribe: Subscribe<TRealtimeState>
 }
-
-type RealtimeGroupProviderProps = {
-  children: React.ReactNode
-} & RealtimeGroupConnectionOptions
 
 type RealtimeDocumentProviderProps = {
   children: React.ReactNode

@@ -3,8 +3,8 @@ import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react
 import { BroadcastEventRequest, BroadcastEventResponse, uniqueId } from '../../core'
 import { RealtimeConnectionStatus } from '../../socket/types'
 import { UseChannel } from '../../socket/useWebSocket'
-import { Broadcast, UseBroadcastListener } from '../presence/types'
 import { BroadcastStore, createBroadcastStore } from './createBroadcastStore'
+import { Broadcast, UseBroadcastListener } from './types'
 
 export type UseBroadcastChannel = {
   broadcast: Broadcast

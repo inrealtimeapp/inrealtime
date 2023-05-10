@@ -1,12 +1,11 @@
 import React from 'react'
 
+import { Broadcast, UseBroadcastListener } from './channels/broadcast/types'
 import { Patch, Subscribe, UseStore } from './channels/document/store/types'
 import {
-  Broadcast,
   PatchMe,
   SubscribeCollaborators,
   SubscribeMe,
-  UseBroadcastListener,
   UseCollaborators,
   UseMe,
 } from './channels/presence/types'
