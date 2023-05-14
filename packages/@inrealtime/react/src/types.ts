@@ -5,9 +5,10 @@ import { GetRealtimeAuthToken } from './core'
 import { RealtimeConnectionStatus } from './socket/types'
 import { UseChannel } from './socket/useWebSocket'
 
-export type RealtimeConnectionOptions =
-  | RealtimeSingleConnectionOptions
-  | RealtimeGroupConnectionOptions
+export type RealtimeConnectionOptions = {
+  documentId?: string | undefined
+  groupId?: string | undefined
+} & RealtimeBaseOptions
 
 export type RealtimeSingleConnectionOptions = {
   documentId?: string | undefined

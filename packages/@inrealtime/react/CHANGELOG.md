@@ -1,5 +1,12 @@
 # @inrealtime/react
 
+## 0.2.5
+
+### Patch Changes
+
+- Exposed useRealtimeConnectiona and useRealtimeDocment
+- Exported useRealtimeConnection and useRealtimeDocument for groups
+
 ## 0.2.4
 
 ### Patch Changes

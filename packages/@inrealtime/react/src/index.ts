@@ -12,4 +12,6 @@ export { createRealtimeGroupContext, RealtimeGroupContextProps } from './createR
 export { RealtimeConnectionStatus } from './socket/types'
 export { useAutosave } from './useAutosave'
 export { useRealtime } from './useRealtime'
+export { useRealtimeConnection } from './useRealtimeConnection'
+export { useRealtimeDocument } from './useRealtimeDocument'
 export { RealtimeDocumentStatus } from './useRealtimeDocument'

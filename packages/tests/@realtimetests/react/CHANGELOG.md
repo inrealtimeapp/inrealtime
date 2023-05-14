@@ -1,5 +1,12 @@
 # @realtimetests/react
 
+## 0.1.14
+
+### Patch Changes
+
+- Exposed useRealtimeConnectiona and useRealtimeDocment
+- Exported useRealtimeConnection and useRealtimeDocument for groups
+
 ## 0.1.13
 
 ### Patch Changes
