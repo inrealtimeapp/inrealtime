@@ -1,5 +1,12 @@
 # @realtimetests/react
 
+## 0.1.16
+
+### Patch Changes
+
+- Exposed more types from realtime package
+- Exposed more types from package
+
 ## 0.1.15
 
 ### Patch Changes

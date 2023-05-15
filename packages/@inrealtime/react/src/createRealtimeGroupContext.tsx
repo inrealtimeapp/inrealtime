@@ -34,11 +34,11 @@ export type RealtimeGroupContextProps<TRealtimePresenceData> = {
   }
 }
 
-type RealtimeGroupProviderProps = {
+export type RealtimeGroupProviderProps = {
   children: React.ReactNode
 } & RealtimeGroupConnectionOptions
 
-type RealtimeGroupContextCollection<TRealtimePresenceData> = {
+export type RealtimeGroupContextCollection<TRealtimePresenceData> = {
   RealtimeGroupProvider(props: RealtimeGroupProviderProps): JSX.Element
   useRealtimeGroupContext(): RealtimeGroupContextProps<TRealtimePresenceData>
   useConnectionStatus(): RealtimeConnectionStatus

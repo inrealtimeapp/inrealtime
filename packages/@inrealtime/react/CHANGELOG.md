@@ -1,5 +1,12 @@
 # @inrealtime/react
 
+## 0.2.7
+
+### Patch Changes
+
+- Exposed more types from realtime package
+- Exposed more types from package
+
 ## 0.2.6
 
 ### Patch Changes

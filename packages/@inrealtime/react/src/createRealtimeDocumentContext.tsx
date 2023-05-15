@@ -11,12 +11,12 @@ export type RealtimeDocumentContextProps<TRealtimeState> = {
   subscribe: Subscribe<TRealtimeState>
 }
 
-type RealtimeDocumentProviderProps = {
+export type RealtimeDocumentProviderProps = {
   children: React.ReactNode
   documentId?: string | undefined
 }
 
-type RealtimeContextCollection<TRealtimeState> = {
+export type RealtimeDocumentContextCollection<TRealtimeState> = {
   RealtimeDocumentProvider(props: RealtimeDocumentProviderProps): JSX.Element
   useRealtimeDocumentContext(): RealtimeDocumentContextProps<TRealtimeState>
   useDocumentStatus(): RealtimeDocumentStatus
@@ -29,7 +29,7 @@ export const createRealtimeDocumentContext = <TRealtimeState,>({
   useRealtimeGroupContext,
 }: {
   useRealtimeGroupContext(): RealtimeGroupContextProps<unknown>
-}): RealtimeContextCollection<TRealtimeState> => {
+}): RealtimeDocumentContextCollection<TRealtimeState> => {
   const RealtimeDocumentContext = React.createContext<Partial<
     RealtimeDocumentContextProps<TRealtimeState>
   > | null>(null)

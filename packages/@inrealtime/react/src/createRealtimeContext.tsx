@@ -33,11 +33,11 @@ export type RealtimeContextProps<TRealtimeState, TRealtimePresenceData> = {
   useBroadcastListener: UseBroadcastListener
 }
 
-type RealtimeProviderProps = {
+export type RealtimeProviderProps = {
   children: React.ReactNode
 } & RealtimeSingleConnectionOptions
 
-type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
+export type RealtimeContextCollection<TRealtimeState, TRealtimePresenceData> = {
   RealtimeProvider(props: RealtimeProviderProps): JSX.Element
   useRealtimeContext(): RealtimeContextProps<TRealtimeState, TRealtimePresenceData>
   useConnectionStatus(): RealtimeConnectionStatus
