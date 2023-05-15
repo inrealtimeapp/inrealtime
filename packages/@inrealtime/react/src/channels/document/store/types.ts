@@ -1,9 +1,4 @@
-import {
-  DocumentOperationsRequest,
-  DocumentOperationsResponse,
-  Fragment,
-  PresenceClient,
-} from '../../../core'
+import { DocumentOperationsRequest, DocumentOperationsResponse, Fragment } from '../../../core'
 import { FragmentIdToPath, ImmerPath } from './utils/pathUtils'
 
 export type UseStore<TRealtimeState> = {

@@ -1,4 +1,4 @@
-export type { DocumentPatch } from './channels/document/store/types'
+export type { DocumentPatch, Patch, Subscribe, UseStore } from './channels/document/store/types'
 export { RealtimePresenceStatus } from './channels/presence/usePresence'
 export type { AutosaveOption } from './config'
 export type { GetRealtimeAuthToken } from './core'

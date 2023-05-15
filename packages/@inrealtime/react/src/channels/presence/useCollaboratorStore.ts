@@ -77,7 +77,7 @@ export const useCollaboratorStore = <
       },
     ) =>
       (useStoreWithPatchRef.current.subscribe as any)(
-        (root) =>
+        (root: any) =>
           root.data === undefined ? undefined : selector ? selector(root.data) : (root.data as any),
         listener,
         options,

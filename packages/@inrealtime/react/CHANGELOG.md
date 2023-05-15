@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.6
+
+### Patch Changes
+
+- Exported more types
+
 ## 0.2.5
 
 ### Patch Changes

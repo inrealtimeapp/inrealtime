@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.1.15
+
+### Patch Changes
+
+- Exported more types
+
 ## 0.1.14
 
 ### Patch Changes
