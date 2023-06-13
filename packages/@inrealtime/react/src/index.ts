@@ -21,6 +21,7 @@ export {
   RealtimeGroupContextProps,
   RealtimeGroupProviderProps,
 } from './createRealtimeGroupContext'
+export * from './immer'
 export { RealtimeConnectionStatus } from './socket/types'
 export { useAutosave } from './useAutosave'
 export { useRealtime } from './useRealtime'

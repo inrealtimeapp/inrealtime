@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.1.17
+
+### Patch Changes
+
+- Added realtimeCurrent and realtimeOriginal for accessing correct immer functions
+
 ## 0.1.16
 
 ### Patch Changes

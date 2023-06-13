@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.8
+
+### Patch Changes
+
+- Added realtimeCurrent and realtimeOriginal for accessing correct immer functions
+
 ## 0.2.7
 
 ### Patch Changes
