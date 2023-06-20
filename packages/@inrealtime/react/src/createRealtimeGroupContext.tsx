@@ -10,6 +10,7 @@ import {
   UseMe,
 } from './channels/presence/types'
 import { RealtimePresenceStatus } from './channels/presence/usePresence'
+import { DuplicateDocument } from './channels/utils/useUtilsChannel'
 import { RealtimeConfig } from './config'
 import { PresenceClient } from './core'
 import { RealtimeConnectionStatus } from './socket/types'
@@ -27,6 +28,7 @@ export type RealtimeGroupContextProps<TRealtimePresenceData> = {
   subscribeMe: SubscribeMe<TRealtimePresenceData>
   broadcast: Broadcast
   useBroadcastListener: UseBroadcastListener
+  duplicate: DuplicateDocument
   _package: {
     config: RealtimeConfig
     useChannel: UseChannel
@@ -50,6 +52,7 @@ export type RealtimeGroupContextCollection<TRealtimePresenceData> = {
   useSubscribeMe(): SubscribeMe<TRealtimePresenceData>
   useBroadcast(): Broadcast
   useBroadcastListener: UseBroadcastListener
+  useDuplicate(): DuplicateDocument
 }
 
 export const createRealtimeGroupContext = <
@@ -81,6 +84,7 @@ export const createRealtimeGroupContext = <
       useBroadcastListener,
       config,
       useChannel,
+      duplicate,
     } = useRealtimeConnection<TRealtimePresenceData>({
       groupId,
       getAuthToken,
@@ -102,6 +106,7 @@ export const createRealtimeGroupContext = <
           subscribeMe,
           broadcast,
           useBroadcastListener,
+          duplicate,
           _package: {
             config,
             useChannel,
@@ -216,6 +221,16 @@ export const createRealtimeGroupContext = <
     return useBroadcastListener(onEvent)
   }
 
+  const useDuplicate = (): DuplicateDocument => {
+    const { duplicate } = useRealtimeGroupContext()
+
+    if (duplicate === null) {
+      throw new Error('No RealtimeProvider provided')
+    }
+
+    return duplicate
+  }
+
   return {
     RealtimeGroupProvider,
     useRealtimeGroupContext,
@@ -228,5 +243,6 @@ export const createRealtimeGroupContext = <
     useSubscribeMe,
     useBroadcast,
     useBroadcastListener,
+    useDuplicate,
   }
 }

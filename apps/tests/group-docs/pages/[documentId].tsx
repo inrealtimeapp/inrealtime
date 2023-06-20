@@ -19,6 +19,7 @@ export default function Home() {
   const router = useRouter()
   const documentId = router.query.documentId as string
   const documentIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
   console.log(documentId)
   return (
     <RealtimeDocumentProvider documentId={documentId}>

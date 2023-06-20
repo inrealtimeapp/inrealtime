@@ -1,13 +1,7 @@
 import { MutableRefObject, useCallback, useEffect, useRef } from 'react'
 
 import { getIndexedAutosaveInstance, RealtimeConfig } from '../../../config'
-import {
-  DocumentOperationRoot,
-  DocumentOperationsRequest,
-  DocumentSetRootRequest,
-  Fragment,
-  uniqueId,
-} from '../../../core'
+import { DocumentOperationRoot, DocumentOperationsRequest, Fragment, uniqueId } from '../../../core'
 import { RealtimeStore } from '../store/types'
 import { OpsMessageType } from '../useDocument'
 import { AutosaveDocumentMetadata, IAutosave } from './autosave'
@@ -23,7 +17,7 @@ export const useDocumentAutosave = ({
   config: RealtimeConfig
   documentId?: string
   subscriptionIdRef: MutableRefObject<string | undefined>
-  localStore: RealtimeStore<unknown>
+  localStore: RealtimeStore<any>
   onLocalData: (fragment: Fragment) => void
   onNoLocalData: () => void
 }) => {

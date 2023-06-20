@@ -1,5 +1,29 @@
 # @realtimetests/react
 
+## 0.1.21
+
+### Patch Changes
+
+- Added duplicate functionality for group documents"
+
+## 0.1.20
+
+### Patch Changes
+
+- Added more duplicate options
+
+## 0.1.19
+
+### Patch Changes
+
+- Updates to duplicate
+
+## 0.1.18
+
+### Patch Changes
+
+- Added duplicate
+
 ## 0.1.17
 
 ### Patch Changes

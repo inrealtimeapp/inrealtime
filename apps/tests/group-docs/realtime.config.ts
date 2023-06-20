@@ -28,6 +28,7 @@ export const {
   useSubscribeMe,
   useBroadcast,
   useBroadcastListener,
+  useDuplicate,
 } = createRealtimeGroupContext<PresenceData>()
 
 export const {

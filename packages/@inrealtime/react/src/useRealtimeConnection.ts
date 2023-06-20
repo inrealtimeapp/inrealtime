@@ -4,6 +4,7 @@ import { useAuth } from './auth/useAuth'
 import { useBroadcastChannel } from './channels/broadcast/useBroadcast'
 import { usePresenceChannel } from './channels/presence/usePresence'
 import { useSystemChannel } from './channels/system/useSystem'
+import { useUtilsChannel } from './channels/utils/useUtilsChannel'
 import { getRealtimeConfig, RealtimeConfig } from './config'
 import { useWebSocket } from './socket/useWebSocket'
 import { getThrottle } from './throttle'
@@ -67,6 +68,9 @@ export const useRealtimeConnection = <TRealtimePresenceData>({
     throttle,
   })
 
+  // Document duplication
+  const { duplicate } = useUtilsChannel({ useChannel })
+
   return {
     connectionStatus,
     connectionStatusRef,
@@ -80,5 +84,6 @@ export const useRealtimeConnection = <TRealtimePresenceData>({
     useBroadcastListener,
     config,
     useChannel,
+    duplicate,
   }
 }

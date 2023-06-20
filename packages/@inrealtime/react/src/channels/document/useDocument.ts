@@ -648,8 +648,8 @@ export const useDocumentChannel = <TRealtimeState>({
 }
 
 const groupBy = <T>(list: T[], keyGetter: (d: T) => any): Map<string, T[]> => {
-  const map = new Map<string, T>()
-  list.forEach((item) => {
+  const map = new Map<string, T[]>()
+  list.forEach((item: T) => {
     const key = keyGetter(item)
     const collection = map.get(key)
     if (!collection) {

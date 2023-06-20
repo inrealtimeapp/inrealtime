@@ -207,7 +207,7 @@ export const useRealtimeStore = <TRealtimeState>({
       },
     ) =>
       (useStoreWithPatchRef.current.subscribe as any)(
-        (root) =>
+        (root: any) =>
           root.fragment === undefined
             ? undefined
             : selector
