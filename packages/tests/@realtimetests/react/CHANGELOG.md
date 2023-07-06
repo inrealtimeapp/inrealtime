@@ -1,5 +1,11 @@
 # @realtimetests/react
 
+## 0.1.22
+
+### Patch Changes
+
+- Removed unneccessary warning
+
 ## 0.1.21
 
 ### Patch Changes

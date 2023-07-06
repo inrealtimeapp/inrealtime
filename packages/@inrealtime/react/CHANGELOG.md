@@ -1,5 +1,11 @@
 # @inrealtime/react
 
+## 0.2.10
+
+### Patch Changes
+
+- Removed unneccessary warning
+
 ## 0.2.9
 
 ### Patch Changes

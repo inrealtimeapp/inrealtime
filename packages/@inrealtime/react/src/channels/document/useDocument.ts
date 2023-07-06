@@ -417,6 +417,8 @@ export const useDocumentChannel = <TRealtimeState>({
             onOpsMessage(documentOpsMessage)
           }
           break
+        case 'unsubscribed':
+          break
         default:
           console.warn(`Document message with type '${message.type}' unhandled.`)
           break
